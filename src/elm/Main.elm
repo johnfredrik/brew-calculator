@@ -1,33 +1,68 @@
 module Main exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing ( onClick )
+import Html.Events exposing ( onInput )
+import String
 
--- component import example
-import Components.Hello exposing ( hello )
 
 
 -- APP
-main : Program Never Int Msg
+main : Program Never Model Msg
 main =
   Html.beginnerProgram { model = model, view = view, update = update }
 
 
 -- MODEL
-type alias Model = Int
+type alias Model =
+  { og : Float
+  , fg : Float
+  , miller : Float
+  , simple : Float
+  , error : String
+  }
 
-model : number
-model = 0
+model : Model
+model = 
+  let
+    og = 1.054
+    fg = 1.010
+  in
+    {og = og, fg = fg, miller = (miller og fg), simple = (simple og fg), error = ""}
+
+type Formula
+  = Miller
+  | Simple
+
 
 
 -- UPDATE
-type Msg = NoOp | Increment
+type Msg 
+  = NoOp
+  | SetOG String
+  | SetFG String
 
 update : Msg -> Model -> Model
 update msg model =
   case msg of
     NoOp -> model
-    Increment -> model + 1
+    SetOG ogString ->
+      let
+        og = String.toFloat ogString
+      in
+        case og of
+          Ok number ->
+            { model | og = number}
+          Err error ->
+            {model | error = error }
+    SetFG fgString ->
+      let
+        fg = String.toFloat fgString
+      in
+        case fg of
+          Ok number ->
+            { model | og = number}
+          Err error ->
+            {model | error = error }
 
 
 -- VIEW
@@ -35,29 +70,33 @@ update msg model =
 -- CSS can be applied via class names or inline style attrib
 view : Model -> Html Msg
 view model =
-  div [ class "container", style [("margin-top", "30px"), ( "text-align", "center" )] ][    -- inline CSS (literal)
-    div [ class "row" ][
-      div [ class "col-xs-12" ][
-        div [ class "jumbotron" ][
-          img [ src "static/img/elm.jpg", style styles.img ] []                             -- inline CSS (via var)
-          , hello model                                                                     -- ext 'hello' component (takes 'model' as arg)
-          , p [] [ text ( "Elm Webpack Starter" ) ]
-          , button [ class "btn btn-primary btn-lg", onClick Increment ] [                  -- click handler
-            span[ class "glyphicon glyphicon-star" ][]                                      -- glyphicon
-            , span[][ text "FTW!" ]
-          ]
-        ]
+  div 
+    [] 
+    [ h1 [] [text "ABV calculator"]
+    , h3 [] [ text model.error]
+    , div [] 
+      [ label [] [ text "OG" ]
+      , input [ type_ "text", value (toString model.og), onInput SetOG] [ ]
+      , label [] [ text "FG" ]
+      , input [ type_ "text", value (toString model.fg), onInput SetFG] [ ]
       ]
+    , viewFormula "Miller:" model.miller
+    , viewFormula "Simple:" model.simple
+    
     ]
-  ]
 
-
--- CSS STYLES
-styles : { img : List ( String, String ) }
-styles =
-  {
-    img =
-      [ ( "width", "33%" )
-      , ( "border", "4px solid #337AB7")
+viewFormula : String -> Float -> Html Msg
+viewFormula formula result =
+  div [] 
+      [ span [] [ text formula]
+      , span [] [ text (toString result)]
       ]
-  }
+
+
+miller : Float -> Float -> Float
+miller og fg =
+    (og - fg) / 0.75 * 100
+
+simple : Float -> Float -> Float
+simple og fg =
+  (og - fg) * 131.25
