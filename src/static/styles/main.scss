@@ -3,13 +3,17 @@ $icon-font-path: '~bootstrap-sass/assets/fonts/bootstrap/';
 @import '~bootstrap-sass/assets/stylesheets/_bootstrap.scss';
 
 // can add Boostrap overrides, additional Sass/CSS below...
+body {
+    background-color: #f6f6f6;
+}
 
 .content {
     display: flex;
-  //  background-color: wheat;
     flex-flow: column nowrap;
     padding: 20px;
     margin: 10px;
+    align-items: center;
+    justify-content: center;
 }
 
 .content h1 {
@@ -19,31 +23,39 @@ $icon-font-path: '~bootstrap-sass/assets/fonts/bootstrap/';
 .formulas {
     display: flex;
     flex-flow: column wrap;
+    width: 350px;
 }
 
-.formulas div:nth-child(even) {
-    background-color: sandybrown;
+.formulas .formula:nth-child(even) {
+    background-color: #f6f6f6;
 }
 
-.formulas div:nth-child(odd) {
-    background-color: red;
+.formulas .formula:nth-child(odd) {
+    background-color: #dbdbdb;
 }
 
 .formula {
     display: flex;
     flex-flow: row wrap;
     align-content: center;
+    padding: 6px;
+    justify-content : space-between;
+    font-size: 1.5em;
 }
 
-.formula div {
-    font-size: 1.5em;
-    width: 120px;
+.formula .title {
+    width: 210px;
+}
+
+.formula .value {
+    width: 90px;
 }
 
 .input-groups {
     display: flex;
     flex-flow: row wrap;
     font-size: 1.5em;
+    padding: 5px;
 }
 .inputs {
     display: flex;
@@ -54,10 +66,12 @@ $icon-font-path: '~bootstrap-sass/assets/fonts/bootstrap/';
 
 .inputs label {
     margin: 0;
+    margin-right: 4px;
 }
 
 .inputs input {
     width: 3em;
+    background-color: #dbdbdb; 
 }
 
 
