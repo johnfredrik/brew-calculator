@@ -3,3 +3,66 @@ $icon-font-path: '~bootstrap-sass/assets/fonts/bootstrap/';
 @import '~bootstrap-sass/assets/stylesheets/_bootstrap.scss';
 
 // can add Boostrap overrides, additional Sass/CSS below...
+
+.content {
+    display: flex;
+  //  background-color: wheat;
+    flex-flow: column nowrap;
+    padding: 20px;
+    margin: 10px;
+}
+
+.content h1 {
+    font-size: 3em;
+}
+
+.formulas {
+    display: flex;
+    flex-flow: column wrap;
+}
+
+.formulas div:nth-child(even) {
+    background-color: sandybrown;
+}
+
+.formulas div:nth-child(odd) {
+    background-color: red;
+}
+
+.formula {
+    display: flex;
+    flex-flow: row wrap;
+    align-content: center;
+}
+
+.formula div {
+    font-size: 1.5em;
+    width: 120px;
+}
+
+.input-groups {
+    display: flex;
+    flex-flow: row wrap;
+    font-size: 1.5em;
+}
+.inputs {
+    display: flex;
+    flex-flow: row wrap;
+    width: 120px;
+    align-items: center;
+}
+
+.inputs label {
+    margin: 0;
+}
+
+.inputs input {
+    width: 3em;
+}
+
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}

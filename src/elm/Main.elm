@@ -2,6 +2,7 @@ module Main exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing ( onInput )
+import Round exposing( round )
 import String
 
 
@@ -48,21 +49,25 @@ update msg model =
     SetOG ogString ->
       let
         og = String.toFloat ogString
-      in
-        case og of
+        newModel =
+          case og of
           Ok number ->
-            { model | og = number}
+            { model | og = number }
           Err error ->
-            {model | error = error }
+            {model | error = error } 
+      in
+        recalculate newModel
     SetFG fgString ->
       let
         fg = String.toFloat fgString
-      in
-        case fg of
+        newModel = 
+          case fg of
           Ok number ->
-            { model | og = number}
+            { model | fg = number}
           Err error ->
             {model | error = error }
+      in
+        recalculate newModel
 
 
 -- VIEW
@@ -71,26 +76,40 @@ update msg model =
 view : Model -> Html Msg
 view model =
   div 
-    [] 
-    [ h1 [] [text "ABV calculator"]
-    , h3 [] [ text model.error]
-    , div [] 
-      [ label [] [ text "OG" ]
-      , input [ type_ "text", value (toString model.og), onInput SetOG] [ ]
-      , label [] [ text "FG" ]
-      , input [ type_ "text", value (toString model.fg), onInput SetFG] [ ]
-      ]
-    , viewFormula "Miller:" model.miller
-    , viewFormula "Simple:" model.simple
-    
+    [ class "content"] 
+    [ div [ class "header" ] 
+          [ h1 [] [text "ABV calculator"] ]
+    , div [class "input-groups"] 
+          [ div [ class "inputs"]
+                [ label [] [ text "OG:" ]
+                  , input [ type_ "number", defaultValue "1.054", onInput SetOG] [ ]
+                ]
+          , div [ class "inputs"]
+                [ label [] [ text "FG:" ]
+                , input [ type_ "number", defaultValue "1.010", onInput SetFG] [ ]
+                ]
+          ]
+    , div [ class "formulas"]
+          [ div [ class "formula" ] 
+                [ div[] [text "Formulas:" ]
+                , div[] [text "Value:"]
+                ]
+          , viewFormula "Miller:" model.miller
+          , viewFormula "Simple:" model.simple
+          ]
     ]
 
 viewFormula : String -> Float -> Html Msg
 viewFormula formula result =
-  div [] 
-      [ span [] [ text formula]
-      , span [] [ text (toString result)]
+  div [ class "formula" ] 
+      [ div [] [ text formula]
+      , div [] [ text ((Round.round 2 result) ++ "%")]
       ]
+
+
+recalculate : Model -> Model
+recalculate model =
+  { model | miller = (miller model.og model.fg), simple = (simple model.og model.fg)}
 
 
 miller : Float -> Float -> Float
@@ -100,3 +119,6 @@ miller og fg =
 simple : Float -> Float -> Float
 simple og fg =
   (og - fg) * 131.25
+
+
+      
