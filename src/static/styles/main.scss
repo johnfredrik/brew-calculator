@@ -10,14 +10,26 @@ body {
 .content {
     display: flex;
     flex-flow: column nowrap;
-    padding: 20px;
-    margin: 10px;
+  //  padding: 20px;
+ //   margin: 10px;
     align-items: center;
     justify-content: center;
 }
 
 .content h1 {
     font-size: 3em;
+}
+
+.header {
+    display: flex;
+    flex-flow: row wrap;
+    background-color: #a8a8a8;
+    color: white;
+    width: 100%;
+}
+
+.header div {
+    margin: 20px;
 }
 
 .formulas {
