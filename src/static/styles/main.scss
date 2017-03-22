@@ -100,3 +100,24 @@ input::-webkit-inner-spin-button {
 .selected-header {
     background-color: lightblue;
 }
+
+.ibu-title {
+    display: flex;
+
+}
+
+.ibu-column {
+    width: 100px;
+    padding: 2px;
+    text-align: center;
+}
+
+.hop {
+    display: flex;
+}
+
+.ibu {
+    width: 40px;
+    padding: 4px;
+    text-align: center;
+}

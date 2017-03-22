@@ -1,4 +1,5 @@
 module Components.Formula exposing(..)
+import Debug
 
 miller : Float -> Float -> Float
 miller og fg =
@@ -23,3 +24,72 @@ alternativeAdvanced og fg =
 microbrewit : Float -> Float -> Float
 microbrewit og fg =
   ((alternativeSimple og fg) + (alternativeAdvanced og fg) + (simple og fg) +  (advanced og fg) + (miller og  fg)) / 5
+
+
+--IBU
+
+tanh : Float -> Float
+tanh x =
+    let
+      value = e^(2*x)
+    in
+      (value-1) / (value+1)
+
+rager : Float -> Float -> Float -> Float -> Float -> Float
+rager boilTime amount aa boilVolume boilGravity =
+    let
+      utilisation = ragerUtilisation boilTime
+      d = Debug.log "utilisation" utilisation
+    in
+      ragerIbu amount utilisation aa boilVolume boilGravity
+
+
+ragerUtilisation : Float -> Float
+ragerUtilisation boilTime =
+    let
+      util = 18.11 + 13.86 * tanh((boilTime-31.32) / 18.27)
+      d = Debug.log "util" util
+    in
+      util / 100
+      
+  
+ragerIbu : Float -> Float -> Float -> Float -> Float -> Float
+ragerIbu amount utilisation aa boilVolume boilGravity =
+  let
+    ga = 
+      if boilGravity > 1.050 then
+        (boilGravity - 1.050) / 0.2
+      else
+        0
+    alphaAcid = aa / 100
+    d1 = Debug.log "amount" amount
+    d2 = Debug.log "utilisation" utilisation
+    d3 = Debug.log "alphaAcid" alphaAcid
+    d4 = Debug.log "boilVolume" boilVolume
+    d5 = Debug.log "1+ga" (1+ga)
+
+  in
+    (amount * utilisation * alphaAcid * 1000) / (boilVolume * (1+ga))
+
+tinseth : Float -> Float -> Float -> Float -> Float -> Float
+tinseth boilTime amount aa boilVolume boilGravity = 
+  let
+    mgl = tinsethMgl amount aa boilVolume
+    utilisation = tinsetUtilisation boilTime boilGravity
+    d2 = Debug.log "tinseth:" utilisation * mgl
+  in
+    utilisation * mgl
+
+tinsethMgl : Float -> Float -> Float -> Float 
+tinsethMgl amount aa boilVolume =
+  ((aa/100)*amount*1000) / boilVolume
+
+tinsetUtilisation : Float -> Float -> Float
+tinsetUtilisation boilTime boilGravity =
+  let
+    boilTimeFactor = (1 - (e^(-0.04 * boilTime))) / 4.15
+    bignessFactor = (1.65 * (0.00125^(boilGravity - 1)))
+  in
+    bignessFactor * boilTimeFactor
+    
+

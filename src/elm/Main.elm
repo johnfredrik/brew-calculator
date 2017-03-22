@@ -5,7 +5,7 @@ import Html.Events exposing ( onInput, onClick )
 import Round exposing( round )
 import Components.Formula exposing(..)
 import String
-
+import Debug
 
 
 -- APP
@@ -17,6 +17,7 @@ main =
 -- MODEL
 type alias Model =
   { abv : Abv
+  , ibu : Ibu
   , calculator : Calculator
   , error : String
   }
@@ -25,7 +26,8 @@ model : Model
 model = 
 
     { abv = abv
-    , calculator = AbvCalculator
+    , ibu = ibu
+    , calculator = IbuCalculator
     , error = ""
     }
 
@@ -56,6 +58,39 @@ abv =
     , microbrewit = microbrewit og fg
     }
 
+type alias Ibu =
+  { og : Float
+  , boilVolume : Float
+  , hops : List Hop
+  , totalRager : Float
+  , totalTinseth : Float
+  }
+
+ibu : Ibu
+ibu = 
+  { og = 1.054, boilVolume = 20, hops = hops, totalRager = 0, totalTinseth = 0}
+    
+
+type alias Hop =
+  { id : Int
+  , name : String
+  , aa : Float
+  , amount : Float
+  , boilTime : Int
+  , rager : Float
+  , tinseth : Float
+  }
+
+hops : List Hop
+hops =
+  [ {id = 1, name = "Hop1", aa = 3.5, amount = 20, boilTime = 60, rager = 0, tinseth = 0}
+  , {id = 2, name = "Hop2", aa = 3.6, amount = 21, boilTime = 15, rager = 0, tinseth = 0}
+  ]
+
+hop : Int -> Hop 
+hop id =
+  {id = id, name = "Hop2", aa = 0.0, amount = 0, boilTime = 0, rager = 0, tinseth = 0}
+
 type Calculator
   = AbvCalculator
   | IbuCalculator
@@ -66,6 +101,11 @@ type Msg
   | SetOG String
   | SetFG String
   | ChangeCalculator Calculator
+  | AddHop
+  | RemoveHop Int
+  | SetAlphaAcid Hop String
+  | SetBoilTime Hop String
+  | SetAmount Hop String
 
 update : Msg -> Model -> Model
 update msg model =
@@ -97,6 +137,63 @@ update msg model =
        { model | abv = recalculate newAbv}
     ChangeCalculator calculator ->
        { model | calculator = calculator}
+    AddHop ->
+      let
+        hopId = (nextHopId model.ibu.hops)
+        oldIbu = model.ibu
+        newIbu = { oldIbu | hops = (oldIbu.hops ++ [(hop hopId) ])}
+      in
+        { model | ibu = newIbu}
+    RemoveHop id ->
+      let
+        d2 = Debug.log "Hop:" id
+        oldIbu = model.ibu
+        newIbu = { oldIbu | hops = (List.filter (\h -> h.id /= id) model.ibu.hops)}
+      in
+        { model | ibu = newIbu}
+    SetAlphaAcid hop alphaAcid ->
+      let
+        updatedHop = 
+          case (String.toFloat alphaAcid) of
+            Ok number ->
+              { hop | aa = number }
+            Err error ->
+              hop
+        oldIbu = model.ibu
+        hops = List.map (updateHop updatedHop) oldIbu.hops
+                |> List.map (recalculateIbu ibu.boilVolume ibu.boilVolume)
+        newIbu = { oldIbu | hops = hops}
+      in
+        {model | ibu = newIbu}
+    SetBoilTime hop boilTime ->
+      let
+        updatedHop = 
+          case (String.toInt boilTime) of
+            Ok number ->
+              {hop | boilTime = number}
+            Err error ->
+              hop
+        oldIbu = model.ibu
+        hops = List.map (updateHop updatedHop) oldIbu.hops
+                |> List.map (recalculateIbu ibu.boilVolume ibu.boilVolume)
+        newIbu = { oldIbu | hops = hops}
+      in
+        {model | ibu = newIbu}
+    SetAmount hop amount ->
+      let
+        updatedHop = 
+          case (String.toFloat amount) of
+            Ok number ->
+              {hop | amount = number}
+            Err error ->
+              hop
+        oldIbu = model.ibu
+        hops = List.map (updateHop updatedHop) oldIbu.hops
+                |> List.map (recalculateIbu ibu.boilVolume ibu.boilVolume)
+        newIbu = { oldIbu | hops = hops}
+      in
+        {model | ibu = newIbu}
+        
 
 
 -- VIEW
@@ -112,7 +209,7 @@ view model =
           ]
     , div []  
           [ div [ classList [("hide", model.calculator /= AbvCalculator)] ] [viewAbv model.abv]
-          , div [ classList [("hide", model.calculator /= IbuCalculator)]] [viewIbu]
+          , div [ classList [("hide", model.calculator /= IbuCalculator)] ] [viewIbu model.ibu]
           ]
     ]
 
@@ -145,11 +242,45 @@ viewAbv abv =
           ]
       ]
 
-viewIbu : Html Msg
-viewIbu =
+viewIbu : Ibu -> Html Msg
+viewIbu ibu =
   div [] 
       [ h1 [] [text "IBU Calculator"]
+      , div [] 
+            [ label [] [ text "Boil Volume"]
+            , input [ defaultValue (toString ibu.boilVolume) ] []
+            ]
+      , div []
+            [ label [] [text "Original Gravity" ]
+            , input [ defaultValue (toString ibu.og)] []
+            ]
+      , div [] 
+            [ div [ class "ibu-title"] 
+                  [ div [ class "ibu-column" ] [ text "Alfa Acids"] 
+                  , div [ class "ibu-column" ] [ text "Amount"]
+                  , div [ class "ibu-column" ] [ text "Boil Time"]
+                  , div [ class "ibu" ] [ text "Rager" ]
+                  , div [ class "ibu" ] [ text "Tinseth" ]
+                  ]
+            , div [] (List.map viewHop ibu.hops)
+            ]
+      , div [] 
+            [ button [ onClick AddHop ] [ text "Add hop"]
+            , div [] [ text (toString ibu.totalRager) ]
+            , div [] [ text (toString ibu.totalTinseth) ]
+            ] 
+            
+      ]
 
+viewHop : Hop -> Html Msg
+viewHop hop =
+  div [ class "hop"] 
+      [ input [ class "ibu-column", defaultValue (toString hop.aa), onInput (SetAlphaAcid hop) ] []
+      , input [ class "ibu-column", defaultValue (toString hop.amount), onInput (SetAmount hop) ] []
+      , input [ class "ibu-column", defaultValue (toString hop.boilTime), onInput (SetBoilTime hop) ] []
+      , div [ class "ibu"] [ text (Round.round 0 hop.rager) ]
+      , div [ class "ibu"] [ text (Round.round 0 hop.tinseth) ]
+      , button [ onClick (RemoveHop hop.id)] [ text "-"]
       ]
 
 viewFormula : String -> Float -> Html Msg
@@ -170,3 +301,29 @@ recalculate abv =
     , alternativeAdvanced = alternativeAdvanced abv.og abv.fg
     , microbrewit = microbrewit abv.og abv.fg
     }
+
+recalculateIbu : Float -> Float -> Hop -> Hop
+recalculateIbu boilVolume boilGravity hop =
+    {hop 
+      | rager = (rager (toFloat hop.boilTime) hop.amount hop.aa boilVolume boilGravity )
+      , tinseth = (tinseth (toFloat hop.boilTime) hop.amount hop.aa boilVolume boilGravity )
+    }
+
+updateHop : Hop -> Hop -> Hop
+updateHop newHop oldHop =
+  if newHop.id == oldHop.id then
+    { oldHop | aa = newHop.aa, boilTime = newHop.boilTime, amount = newHop.amount }
+  else
+    oldHop
+
+nextHopId : List Hop -> Int
+nextHopId hops = 
+  let 
+    ids = List.map (\hop -> hop.id) hops
+  in
+    case (List.maximum ids) of
+      Nothing ->
+        1
+      Just number ->
+        number + 1
+
