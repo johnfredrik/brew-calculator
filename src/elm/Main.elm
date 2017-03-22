@@ -1,7 +1,7 @@
 module Main exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing ( onInput )
+import Html.Events exposing ( onInput, onClick )
 import Round exposing( round )
 import Components.Formula exposing(..)
 import String
@@ -17,6 +17,7 @@ main =
 -- MODEL
 type alias Model =
   { abv : Abv
+  , calculator : Calculator
   , error : String
   }
 
@@ -24,6 +25,7 @@ model : Model
 model = 
 
     { abv = abv
+    , calculator = AbvCalculator
     , error = ""
     }
 
@@ -53,11 +55,17 @@ abv =
     , alternativeAdvanced = alternativeAdvanced og fg
     , microbrewit = microbrewit og fg
     }
+
+type Calculator
+  = AbvCalculator
+  | IbuCalculator
+
 --   UPDATE
 type Msg 
   = NoOp
   | SetOG String
   | SetFG String
+  | ChangeCalculator Calculator
 
 update : Msg -> Model -> Model
 update msg model =
@@ -87,6 +95,8 @@ update msg model =
             oldAbv
       in
        { model | abv = recalculate newAbv}
+    ChangeCalculator calculator ->
+       { model | calculator = calculator}
 
 
 -- VIEW
@@ -97,10 +107,13 @@ view model =
   div 
     [ class "content"] 
     [ div [ class "header" ] 
-          [ div [] [ text "ABV" ]
-          , div [] [ text "IBU" ]
+          [ div [ classList [("selected-header", model.calculator == AbvCalculator)], onClick (ChangeCalculator AbvCalculator)] [ text "ABV" ]
+          , div [ classList [("selected-header", model.calculator == IbuCalculator)], onClick (ChangeCalculator IbuCalculator)] [ text "IBU" ]
           ]
-    , viewAbv model.abv
+    , div []  
+          [ div [ classList [("hide", model.calculator /= AbvCalculator)] ] [viewAbv model.abv]
+          , div [ classList [("hide", model.calculator /= IbuCalculator)]] [viewIbu]
+          ]
     ]
 
 viewAbv : Abv -> Html Msg
@@ -132,6 +145,12 @@ viewAbv abv =
           ]
       ]
 
+viewIbu : Html Msg
+viewIbu =
+  div [] 
+      [ h1 [] [text "IBU Calculator"]
+
+      ]
 
 viewFormula : String -> Float -> Html Msg
 viewFormula formula result =
