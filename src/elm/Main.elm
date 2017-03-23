@@ -1,11 +1,12 @@
 module Main exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing ( onInput, onClick )
+import Html.Events exposing ( onInput, onClick,on )
 import Round exposing( round )
 import Components.Formula exposing(..)
 import String
 import Debug
+import Json.Decode exposing (map)
 
 
 -- APP
@@ -68,7 +69,7 @@ type alias Ibu =
 
 ibu : Ibu
 ibu = 
-  { og = 1.054, boilVolume = 20, hops = hops, totalRager = 0, totalTinseth = 0}
+  { og = 1.054, boilVolume = 20, hops = [], totalRager = 0, totalTinseth = 0}
     
 
 type alias Hop =
@@ -79,17 +80,18 @@ type alias Hop =
   , boilTime : Int
   , rager : Float
   , tinseth : Float
+  , hopType : String
   }
 
-hops : List Hop
-hops =
-  [ {id = 1, name = "Hop1", aa = 3.5, amount = 20, boilTime = 60, rager = 0, tinseth = 0}
-  , {id = 2, name = "Hop2", aa = 3.6, amount = 21, boilTime = 15, rager = 0, tinseth = 0}
-  ]
+-- hops : List Hop
+-- hops =
+--   [ {id = 1, name = "Hop1", aa = 3.5, amount = 20, boilTime = 60, rager = 0, tinseth = 0}
+--   , {id = 2, name = "Hop2", aa = 3.6, amount = 21, boilTime = 15, rager = 0, tinseth = 0}
+--   ]
 
 hop : Int -> Hop 
 hop id =
-  {id = id, name = "Hop2", aa = 0.0, amount = 0, boilTime = 0, rager = 0, tinseth = 0}
+  {id = id, name = "Hop2", aa = 0.0, amount = 0, boilTime = 0, rager = 0, tinseth = 0, hopType = "Whole"}
 
 type Calculator
   = AbvCalculator
@@ -106,6 +108,7 @@ type Msg
   | SetAlphaAcid Hop String
   | SetBoilTime Hop String
   | SetAmount Hop String
+  | HopTypeSelected Hop String
 
 update : Msg -> Model -> Model
 update msg model =
@@ -146,9 +149,10 @@ update msg model =
         { model | ibu = newIbu}
     RemoveHop id ->
       let
-        d2 = Debug.log "Hop:" id
         oldIbu = model.ibu
-        newIbu = { oldIbu | hops = (List.filter (\h -> h.id /= id) model.ibu.hops)}
+        hops = List.filter (\h -> h.id /= id) model.ibu.hops
+                |> List.map (recalculateIbu ibu.boilVolume ibu.og)
+        newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
         { model | ibu = newIbu}
     SetAlphaAcid hop alphaAcid ->
@@ -162,7 +166,7 @@ update msg model =
         oldIbu = model.ibu
         hops = List.map (updateHop updatedHop) oldIbu.hops
                 |> List.map (recalculateIbu ibu.boilVolume ibu.og)
-        newIbu = { oldIbu | hops = hops}
+        newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
         {model | ibu = newIbu}
     SetBoilTime hop boilTime ->
@@ -176,7 +180,7 @@ update msg model =
         oldIbu = model.ibu
         hops = List.map (updateHop updatedHop) oldIbu.hops
                 |> List.map (recalculateIbu ibu.boilVolume ibu.og)
-        newIbu = { oldIbu | hops = hops}
+        newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
         {model | ibu = newIbu}
     SetAmount hop amount ->
@@ -190,10 +194,19 @@ update msg model =
         oldIbu = model.ibu
         hops = List.map (updateHop updatedHop) oldIbu.hops
                 |> List.map (recalculateIbu ibu.boilVolume ibu.og)
-        newIbu = { oldIbu | hops = hops}
+        newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
         {model | ibu = newIbu}
-        
+    HopTypeSelected hop hopType ->
+      let
+        oldIbu = model.ibu
+        updatedHop = 
+          {hop | hopType = hopType}
+        hops = List.map (updateHop updatedHop) oldIbu.hops
+                |> List.map (recalculateIbu ibu.boilVolume ibu.og)
+        newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
+      in
+        {model | ibu = newIbu}
 
 
 -- VIEW
@@ -259,6 +272,7 @@ viewIbu ibu =
                   [ div [ class "ibu-column" ] [ text "Alfa Acids"] 
                   , div [ class "ibu-column" ] [ text "Amount"]
                   , div [ class "ibu-column" ] [ text "Boil Time"]
+                  , div [ class "ibu-column" ] [ text "Hop Type" ]
                   , div [ class "ibu" ] [ text "Rager" ]
                   , div [ class "ibu" ] [ text "Tinseth" ]
                   ]
@@ -266,8 +280,8 @@ viewIbu ibu =
             ]
       , div [] 
             [ button [ onClick AddHop ] [ text "Add hop"]
-            , div [] [ text (toString ibu.totalRager) ]
-            , div [] [ text (toString ibu.totalTinseth) ]
+            , div [] [ text ("Rager Total: " ++ (Round.round 2 ibu.totalRager)) ]
+            , div [] [ text ("Tinseth Total: " ++ (Round.round 2 ibu.totalTinseth)) ]
             ] 
             
       ]
@@ -278,8 +292,9 @@ viewHop hop =
       [ input [ class "ibu-column", defaultValue (toString hop.aa), onInput (SetAlphaAcid hop) ] []
       , input [ class "ibu-column", defaultValue (toString hop.amount), onInput (SetAmount hop) ] []
       , input [ class "ibu-column", defaultValue (toString hop.boilTime), onInput (SetBoilTime hop) ] []
-      , div [ class "ibu"] [ text (Round.round 0 hop.rager) ]
-      , div [ class "ibu"] [ text (Round.round 0 hop.tinseth) ]
+      , viewHopType hop
+      , div [ class "ibu"] [ text (Round.round 2 hop.rager) ]
+      , div [ class "ibu"] [ text (Round.round 2 hop.tinseth) ]
       , button [ onClick (RemoveHop hop.id)] [ text "-"]
       ]
 
@@ -290,6 +305,14 @@ viewFormula formula result =
       , div [ class "value" ] [ text ((Round.round 2 result) ++ "%")]
       ]
 
+viewHopType : Hop -> Html Msg
+viewHopType hop =
+  div [ class "ibu-column"] 
+      [ select [ onChange (HopTypeSelected hop)] 
+        [ option [ selected (hop.hopType == "Whole")] [ text "Whole"]
+        , option [ selected (hop.hopType == "Pellet") ] [ text "Pellet"]
+        ]
+      ]
 
 recalculate : Abv -> Abv
 recalculate abv =
@@ -304,15 +327,32 @@ recalculate abv =
 
 recalculateIbu : Float -> Float -> Hop -> Hop
 recalculateIbu boilVolume boilGravity hop =
+  let
+    factor = 
+      if hop.hopType == "Pellet" then 
+        1.1
+      else 
+        1.0
+  in
     {hop 
-      | rager = (rager (toFloat hop.boilTime) hop.amount hop.aa boilVolume boilGravity )
-      , tinseth = (tinseth (toFloat hop.boilTime) hop.amount hop.aa boilVolume boilGravity )
+      | rager = (rager (toFloat hop.boilTime) hop.amount hop.aa boilVolume boilGravity ) * factor
+      , tinseth = (tinseth (toFloat hop.boilTime) hop.amount hop.aa boilVolume boilGravity ) * factor
     }
+
+calculateRager : List Hop -> Float
+calculateRager hops =
+  List.map (\hop -> hop.rager) hops
+    |> List.sum
+
+calculateTinseth : List Hop -> Float
+calculateTinseth hops =
+  List.map (\hop -> hop.tinseth) hops
+    |> List.sum
 
 updateHop : Hop -> Hop -> Hop
 updateHop newHop oldHop =
   if newHop.id == oldHop.id then
-    { oldHop | aa = newHop.aa, boilTime = newHop.boilTime, amount = newHop.amount }
+    { oldHop | aa = newHop.aa, boilTime = newHop.boilTime, amount = newHop.amount, hopType = newHop.hopType }
   else
     oldHop
 
@@ -326,4 +366,8 @@ nextHopId hops =
         1
       Just number ->
         number + 1
+
+onChange : (String -> msg) -> Html.Attribute msg
+onChange tagger =
+  on "change" (Json.Decode.map tagger Html.Events.targetValue)
 

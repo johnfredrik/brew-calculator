@@ -1,5 +1,4 @@
 module Components.Formula exposing(..)
-import Debug
 
 miller : Float -> Float -> Float
 miller og fg =
@@ -39,7 +38,6 @@ rager : Float -> Float -> Float -> Float -> Float -> Float
 rager boilTime amount aa boilVolume boilGravity =
     let
       utilisation = ragerUtilisation boilTime
-      d = Debug.log "utilisation" utilisation
     in
       ragerIbu amount utilisation aa boilVolume boilGravity
 
@@ -48,7 +46,6 @@ ragerUtilisation : Float -> Float
 ragerUtilisation boilTime =
     let
       util = 18.11 + 13.86 * tanh((boilTime-31.32) / 18.27)
-      d = Debug.log "util" util
     in
       util / 100
       
@@ -70,19 +67,18 @@ tinseth boilTime amount aa boilVolume boilGravity =
   let
     mgl = tinsethMgl amount aa boilVolume
     utilisation = tinsetUtilisation boilTime boilGravity
-    d2 = Debug.log "tinseth:" utilisation * mgl
   in
     utilisation * mgl
 
 tinsethMgl : Float -> Float -> Float -> Float 
 tinsethMgl amount aa boilVolume =
-  ((aa/100)*amount*1000) / boilVolume
+    ((aa/100.0) * amount * 1000) / boilVolume
 
 tinsetUtilisation : Float -> Float -> Float
 tinsetUtilisation boilTime boilGravity =
   let
+    bignessFactor = (1.65 * (0.000125^(boilGravity - 1.0)))
     boilTimeFactor = (1 - (e^(-0.04 * boilTime))) / 4.15
-    bignessFactor = (1.65 * (0.00125^(boilGravity - 1)))
   in
     bignessFactor * boilTimeFactor
     

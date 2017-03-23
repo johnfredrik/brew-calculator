@@ -108,8 +108,13 @@ input::-webkit-inner-spin-button {
 
 .ibu-column {
     width: 100px;
-    padding: 2px;
     text-align: center;
+}
+
+.ibu-column select {
+    width: 100%;
+    height: 100%;
+
 }
 
 .hop {
@@ -117,7 +122,8 @@ input::-webkit-inner-spin-button {
 }
 
 .ibu {
-    width: 40px;
+    width: 60px;
     padding: 4px;
     text-align: center;
 }
+
