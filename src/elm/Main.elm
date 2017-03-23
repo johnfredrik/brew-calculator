@@ -161,7 +161,7 @@ update msg model =
               hop
         oldIbu = model.ibu
         hops = List.map (updateHop updatedHop) oldIbu.hops
-                |> List.map (recalculateIbu ibu.boilVolume ibu.boilVolume)
+                |> List.map (recalculateIbu ibu.boilVolume ibu.og)
         newIbu = { oldIbu | hops = hops}
       in
         {model | ibu = newIbu}
@@ -175,7 +175,7 @@ update msg model =
               hop
         oldIbu = model.ibu
         hops = List.map (updateHop updatedHop) oldIbu.hops
-                |> List.map (recalculateIbu ibu.boilVolume ibu.boilVolume)
+                |> List.map (recalculateIbu ibu.boilVolume ibu.og)
         newIbu = { oldIbu | hops = hops}
       in
         {model | ibu = newIbu}
@@ -189,7 +189,7 @@ update msg model =
               hop
         oldIbu = model.ibu
         hops = List.map (updateHop updatedHop) oldIbu.hops
-                |> List.map (recalculateIbu ibu.boilVolume ibu.boilVolume)
+                |> List.map (recalculateIbu ibu.boilVolume ibu.og)
         newIbu = { oldIbu | hops = hops}
       in
         {model | ibu = newIbu}

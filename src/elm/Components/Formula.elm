@@ -62,12 +62,6 @@ ragerIbu amount utilisation aa boilVolume boilGravity =
       else
         0
     alphaAcid = aa / 100
-    d1 = Debug.log "amount" amount
-    d2 = Debug.log "utilisation" utilisation
-    d3 = Debug.log "alphaAcid" alphaAcid
-    d4 = Debug.log "boilVolume" boilVolume
-    d5 = Debug.log "1+ga" (1+ga)
-
   in
     (amount * utilisation * alphaAcid * 1000) / (boilVolume * (1+ga))
 
