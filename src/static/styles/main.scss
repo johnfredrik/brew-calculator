@@ -7,6 +7,19 @@ body {
     background-color: #f6f6f6;
 }
 
+button {
+  //color: #fff;
+  background-color: #dbdbdb;
+  text-shadow: 1px 1px #a8a8a8;
+  border: none;
+  padding: 5px;
+}
+
+h5 {
+    font-weight: bold;
+    font-size: 16px;
+}
+
 .content {
     display: flex;
     flex-flow: column nowrap;
@@ -101,29 +114,102 @@ input::-webkit-inner-spin-button {
     background-color: lightblue;
 }
 
+
+.ibu-calculator {
+    display: flex;
+    flex-flow: column wrap;
+}
+
+.ibu-overhead label {
+    width: 150px;
+    
+}
+
+.ibu-overhead input {
+    width: 50px;
+    margin: 2px 5px 2px 5px;
+    text-align: center;
+}
+
 .ibu-title {
     display: flex;
 
 }
 
-.ibu-column {
-    width: 100px;
-    text-align: center;
+.remove-button {
+    height: 75%;
 }
 
-.ibu-column select {
-    width: 100%;
-    height: 100%;
+.hops .hop:nth-child(even) {
+    background-color: #f6f6f6;
+}
 
+.hops .hop:nth-child(odd) {
+    background-color: #dbdbdb;
+}
+
+.hops {
+    display: flex;
+    flex-flow: column wrap;
 }
 
 .hop {
-    display: flex;
-}
-
-.ibu {
-    width: 60px;
     padding: 4px;
+    display: flex;
+    flex-flow: row wrap;
+    align-items: baseline;
     text-align: center;
 }
 
+.hop input {
+    background-color: #f9f9f9;
+}
+
+.hop button {
+    background-color: inherit;
+    margin: auto;
+}
+
+.hop select {
+    background-color: #f9f9f9;
+    border-width: 2px;
+    border-style: inset;
+    border-color: initial;
+    border-image: initial;
+    align-self: stretch;
+}
+
+.ibu-input {
+    width: 80px;
+    margin: 2px;
+    padding: 2px;
+    //text-align: center;
+    //vertical-align: middle;
+}
+
+
+.ibu-text {
+    width: 60px;
+    margin: 2px;
+    padding: 1px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.ibu-select {
+    width: 80px;
+    margin: 2px;
+    padding: 2px;
+    height: 100%;
+}
+
+.ibu-total {
+    display: flex;
+    margin-top: 10px;
+    justify-content: flex-end;
+}
+
+.add-button {
+    margin-top: 10px;
+    height: 30px;
+}

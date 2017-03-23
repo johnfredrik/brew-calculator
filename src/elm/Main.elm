@@ -228,7 +228,7 @@ view model =
 
 viewAbv : Abv -> Html Msg
 viewAbv abv =
-  div []
+  div [ class "abv-calculator"]
       [ div [] 
           [ h1 [] [text "ABV Calculator"] ]
       , div [class "input-groups"] 
@@ -257,45 +257,49 @@ viewAbv abv =
 
 viewIbu : Ibu -> Html Msg
 viewIbu ibu =
-  div [] 
+  div [ class "ibu-calculator"] 
       [ h1 [] [text "IBU Calculator"]
-      , div [] 
+      , div [ class "ibu-overhead"] 
             [ label [] [ text "Boil Volume"]
             , input [ defaultValue (toString ibu.boilVolume) ] []
             ]
-      , div []
+      , div [ class "ibu-overhead"]
             [ label [] [text "Original Gravity" ]
             , input [ defaultValue (toString ibu.og)] []
             ]
       , div [] 
             [ div [ class "ibu-title"] 
-                  [ div [ class "ibu-column" ] [ text "Alfa Acids"] 
-                  , div [ class "ibu-column" ] [ text "Amount"]
-                  , div [ class "ibu-column" ] [ text "Boil Time"]
-                  , div [ class "ibu-column" ] [ text "Hop Type" ]
-                  , div [ class "ibu" ] [ text "Rager" ]
-                  , div [ class "ibu" ] [ text "Tinseth" ]
+                  [ div [ class "ibu-input" ] [ text "Alpha Acids"] 
+                  , div [ class "ibu-input" ] [ text "Amount"]
+                  , div [ class "ibu-input" ] [ text "Boil Time"]
+                  , div [ class "ibu-select" ] [ text "Hop Type" ]
+                  , div [ class "ibu-text" ] [ text "Rager" ]
+                  , div [ class "ibu-text" ] [ text "Tinseth" ]
                   ]
-            , div [] (List.map viewHop ibu.hops)
+            , div [ class "hops" ] (List.map viewHop ibu.hops)
             ]
-      , div [] 
-            [ button [ onClick AddHop ] [ text "Add hop"]
-            , div [] [ text ("Rager Total: " ++ (Round.round 2 ibu.totalRager)) ]
-            , div [] [ text ("Tinseth Total: " ++ (Round.round 2 ibu.totalTinseth)) ]
-            ] 
-            
+      , div [ class "ibu-total"] 
+            [ div [] 
+                [ h5 [] [ text ("Rager Total: " ++ (Round.round 2 ibu.totalRager)) ]
+                , h5 [] [ text ("Tinseth Total: " ++ (Round.round 2 ibu.totalTinseth)) ]
+                ]
+            , button [ class "add-button", onClick AddHop ] [ text "Add hop"]
+            ]
       ]
 
 viewHop : Hop -> Html Msg
 viewHop hop =
-  div [ class "hop"] 
-      [ input [ class "ibu-column", defaultValue (toString hop.aa), onInput (SetAlphaAcid hop) ] []
-      , input [ class "ibu-column", defaultValue (toString hop.amount), onInput (SetAmount hop) ] []
-      , input [ class "ibu-column", defaultValue (toString hop.boilTime), onInput (SetBoilTime hop) ] []
-      , viewHopType hop
-      , div [ class "ibu"] [ text (Round.round 2 hop.rager) ]
-      , div [ class "ibu"] [ text (Round.round 2 hop.tinseth) ]
-      , button [ onClick (RemoveHop hop.id)] [ text "-"]
+  div [ class "hop"]
+      [ input [ class "ibu-input", defaultValue (toString hop.aa), onInput (SetAlphaAcid hop) ] []
+      , input [ class "ibu-input", defaultValue (toString hop.amount), onInput (SetAmount hop) ] []
+      , input [ class "ibu-input", defaultValue (toString hop.boilTime), onInput (SetBoilTime hop) ] []
+      , select [ class "ibu-input", onChange (HopTypeSelected hop)] 
+          [ option [ selected (hop.hopType == "Whole")] [ text "Whole"]
+          , option [ selected (hop.hopType == "Pellet") ] [ text "Pellet"]
+          ]
+      , div [ class "ibu-input"] [ text (Round.round 2 hop.rager) ]
+      , div [ class "ibu-input"] [ text (Round.round 2 hop.tinseth) ]
+      , button [ class "remove-button", onClick (RemoveHop hop.id)] [ text "-"]
       ]
 
 viewFormula : String -> Float -> Html Msg
