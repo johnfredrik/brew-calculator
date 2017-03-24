@@ -5,13 +5,14 @@ import Html.Events exposing ( onInput, onClick,on )
 import Round exposing( round )
 import Components.Formula exposing(..)
 import String
-import Json.Decode exposing (map)
+import Json.Decode exposing (string, int, list, map, float, Decoder)
+import Http
 
 
 -- APP
 main : Program Never Model Msg
 main =
-  Html.beginnerProgram { model = model, view = view, update = update }
+  Html.program { init = (model, initialCmd), view = view, update = update, subscriptions = (\_ -> Sub.none) }
 
 
 -- MODEL
@@ -19,16 +20,17 @@ type alias Model =
   { abv : Abv
   , ibu : Ibu
   , calculator : Calculator
-  , error : String
+  , error : Maybe String
+  , hopComplete : HopComplete
   }
 
 model : Model
 model = 
-
     { abv = abv
     , ibu = ibu
     , calculator = IbuCalculator
-    , error = ""
+    , error = Nothing
+    , hopComplete = {hops = []}
     }
 
 type alias Abv =
@@ -101,11 +103,12 @@ type Msg
   | SetBoilTime Hop String
   | SetAmount Hop String
   | HopTypeSelected Hop String
+  | LoadHops (Result Http.Error HopComplete)
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
-    NoOp -> model
+    NoOp -> (model, Cmd.none)
     SetOG ogString ->
       let
         og = String.toFloat ogString
@@ -117,7 +120,7 @@ update msg model =
           Err error ->
             oldAbv 
       in
-       { model | abv = (recalculate newAbv) }
+       ({ model | abv = (recalculate newAbv) }, Cmd.none)
     SetFG fgString ->
       let
         fg = String.toFloat fgString
@@ -129,16 +132,16 @@ update msg model =
           Err error ->
             oldAbv
       in
-       { model | abv = recalculate newAbv}
+      ( { model | abv = recalculate newAbv}, Cmd.none)
     ChangeCalculator calculator ->
-       { model | calculator = calculator}
+       ({ model | calculator = calculator}, Cmd.none)
     AddHop ->
       let
         hopId = (nextHopId model.ibu.hops)
         oldIbu = model.ibu
         newIbu = { oldIbu | hops = (oldIbu.hops ++ [(hop hopId) ])}
       in
-        { model | ibu = newIbu}
+        ({ model | ibu = newIbu}, Cmd.none)
     RemoveHop id ->
       let
         oldIbu = model.ibu
@@ -146,7 +149,7 @@ update msg model =
                 |> List.map (recalculateIbu ibu.boilVolume ibu.og)
         newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
-        { model | ibu = newIbu}
+        ({ model | ibu = newIbu}, Cmd.none)
     SetAlphaAcid hop alphaAcid ->
       let
         updatedHop = 
@@ -160,7 +163,7 @@ update msg model =
                 |> List.map (recalculateIbu ibu.boilVolume ibu.og)
         newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
-        {model | ibu = newIbu}
+        ({model | ibu = newIbu}, Cmd.none)
     SetBoilTime hop boilTime ->
       let
         updatedHop = 
@@ -174,7 +177,7 @@ update msg model =
                 |> List.map (recalculateIbu ibu.boilVolume ibu.og)
         newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
-        {model | ibu = newIbu}
+        ({model | ibu = newIbu}, Cmd.none)
     SetAmount hop amount ->
       let
         updatedHop = 
@@ -188,7 +191,7 @@ update msg model =
                 |> List.map (recalculateIbu ibu.boilVolume ibu.og)
         newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
-        {model | ibu = newIbu}
+        ({model | ibu = newIbu}, Cmd.none)
     HopTypeSelected hop hopType ->
       let
         oldIbu = model.ibu
@@ -198,7 +201,11 @@ update msg model =
                 |> List.map (recalculateIbu ibu.boilVolume ibu.og)
         newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
-        {model | ibu = newIbu}
+        ({model | ibu = newIbu}, Cmd.none)
+    LoadHops (Ok hopComplete) ->
+        ({model | hopComplete = hopComplete}, Cmd.none)
+    LoadHops (Err _) ->
+      ({ model | error = Just "Loading hops failed"}, Cmd.none)
 
 
 -- VIEW
@@ -369,4 +376,61 @@ nextHopId hops =
 onChange : (String -> msg) -> Html.Attribute msg
 onChange tagger =
   on "change" (Json.Decode.map tagger Html.Events.targetValue)
+
+
+
+--HTTP Stuff
+
+-- getHopString : String -> Request String
+-- getHopString url =
+
+
+type alias Hop2 =
+  { id: Int
+  , name : String
+  , acid : Acid
+  }
+
+type alias Acid =
+  { alpha : Alpha }
+
+type alias Alpha =
+  { low: Float, high: Float}
+
+
+type alias HopComplete = 
+  { hops: List Hop2 }
+
+decodeHopComplete : Decoder HopComplete
+decodeHopComplete = 
+  Json.Decode.map 
+    HopComplete
+    (Json.Decode.field "hops" (Json.Decode.list decodeHop2))
+
+decodeHop2 : Decoder Hop2
+decodeHop2 =
+  Json.Decode.map3
+    Hop2
+    (Json.Decode.field "hopId" int)
+    (Json.Decode.field "name" string)
+    (Json.Decode.field "acids" decodeAcid)
+
+decodeAcid : Decoder Acid
+decodeAcid =
+  Json.Decode.map
+    Acid
+    (Json.Decode.field "alpha" decodeAlpha)
+
+decodeAlpha : Decoder Alpha
+decodeAlpha =
+  Json.Decode.map2
+    Alpha
+    (Json.Decode.field "low" Json.Decode.float)
+    (Json.Decode.field "high" Json.Decode.float)
+
+initialCmd : Cmd Msg
+initialCmd =
+  decodeHopComplete
+    |> Http.get "https://api.microbrew.it/hops?from=0&size=1000"
+    |> Http.send LoadHops
 
