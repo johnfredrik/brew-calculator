@@ -23,8 +23,6 @@ h5 {
 .content {
     display: flex;
     flex-flow: column nowrap;
-  //  padding: 20px;
- //   margin: 10px;
     align-items: center;
     justify-content: center;
 }
@@ -133,6 +131,7 @@ input::-webkit-inner-spin-button {
 
 .ibu-title {
     display: flex;
+    padding: 4px;
 
 }
 
@@ -180,11 +179,9 @@ input::-webkit-inner-spin-button {
 }
 
 .ibu-input {
-    width: 80px;
+    width: 100px;
     margin: 2px;
     padding: 2px;
-    //text-align: center;
-    //vertical-align: middle;
 }
 
 
@@ -197,18 +194,26 @@ input::-webkit-inner-spin-button {
 }
 
 .ibu-select {
-    width: 80px;
+    width: 100px;
     margin: 2px;
     padding: 2px;
     height: 100%;
 }
 
-.ibu-total {
+.ibu-totals {
     display: flex;
     margin-top: 10px;
-    justify-content: flex-end;
+    justify-content: space-between;
 }
 
+.ibu-total {
+    display: flex;
+    justify-content: space-between;
+}
+
+.ibu-total-value {
+    margin-left: 10px;
+}
 .add-button {
     margin-top: 10px;
     height: 30px;

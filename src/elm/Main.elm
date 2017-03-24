@@ -5,7 +5,6 @@ import Html.Events exposing ( onInput, onClick,on )
 import Round exposing( round )
 import Components.Formula exposing(..)
 import String
-import Debug
 import Json.Decode exposing (map)
 
 
@@ -82,13 +81,6 @@ type alias Hop =
   , tinseth : Float
   , hopType : String
   }
-
--- hops : List Hop
--- hops =
---   [ {id = 1, name = "Hop1", aa = 3.5, amount = 20, boilTime = 60, rager = 0, tinseth = 0}
---   , {id = 2, name = "Hop2", aa = 3.6, amount = 21, boilTime = 15, rager = 0, tinseth = 0}
---   ]
-
 hop : Int -> Hop 
 hop id =
   {id = id, name = "Hop2", aa = 0.0, amount = 0, boilTime = 0, rager = 0, tinseth = 0, hopType = "Whole"}
@@ -210,8 +202,6 @@ update msg model =
 
 
 -- VIEW
--- Html is defined as: elem [ attribs ][ children ]
--- CSS can be applied via class names or inline style attrib
 view : Model -> Html Msg
 view model =
   div 
@@ -269,19 +259,25 @@ viewIbu ibu =
             ]
       , div [] 
             [ div [ class "ibu-title"] 
-                  [ div [ class "ibu-input" ] [ text "Alpha Acids"] 
-                  , div [ class "ibu-input" ] [ text "Amount"]
-                  , div [ class "ibu-input" ] [ text "Boil Time"]
-                  , div [ class "ibu-select" ] [ text "Hop Type" ]
-                  , div [ class "ibu-text" ] [ text "Rager" ]
-                  , div [ class "ibu-text" ] [ text "Tinseth" ]
+                  [ h5 [ class "ibu-input" ] [ text "Alpha Acids"] 
+                  , h5 [ class "ibu-input" ] [ text "Amount"]
+                  , h5 [ class "ibu-input" ] [ text "Boil Time"]
+                  , h5 [ class "ibu-select" ] [ text "Hop Type" ]
+                  , h5 [ class "ibu-text" ] [ text "Rager" ]
+                  , h5 [ class "ibu-text" ] [ text "Tinseth" ]
                   ]
             , div [ class "hops" ] (List.map viewHop ibu.hops)
             ]
-      , div [ class "ibu-total"] 
+      , div [ class "ibu-totals"] 
             [ div [] 
-                [ h5 [] [ text ("Rager Total: " ++ (Round.round 2 ibu.totalRager)) ]
-                , h5 [] [ text ("Tinseth Total: " ++ (Round.round 2 ibu.totalTinseth)) ]
+                [ div [ class "ibu-total"] 
+                    [ h5 [] [ text "Rager Total:" ]
+                    , h5 [class "ibu-total-value"] [ text (Round.round 2 ibu.totalRager)]
+                    ]
+                , div [ class "ibu-total"] 
+                      [ h5 [] [ text "Tinseth Total:" ]
+                      , h5 [ class "ibu-total-value"] [ text  (Round.round 2 ibu.totalTinseth)]
+                      ]
                 ]
             , button [ class "add-button", onClick AddHop ] [ text "Add hop"]
             ]
@@ -293,12 +289,12 @@ viewHop hop =
       [ input [ class "ibu-input", defaultValue (toString hop.aa), onInput (SetAlphaAcid hop) ] []
       , input [ class "ibu-input", defaultValue (toString hop.amount), onInput (SetAmount hop) ] []
       , input [ class "ibu-input", defaultValue (toString hop.boilTime), onInput (SetBoilTime hop) ] []
-      , select [ class "ibu-input", onChange (HopTypeSelected hop)] 
+      , select [ class "ibu-select", onChange (HopTypeSelected hop)] 
           [ option [ selected (hop.hopType == "Whole")] [ text "Whole"]
           , option [ selected (hop.hopType == "Pellet") ] [ text "Pellet"]
           ]
-      , div [ class "ibu-input"] [ text (Round.round 2 hop.rager) ]
-      , div [ class "ibu-input"] [ text (Round.round 2 hop.tinseth) ]
+      , div [ class "ibu-text"] [ text (Round.round 2 hop.rager) ]
+      , div [ class "ibu-text"] [ text (Round.round 2 hop.tinseth) ]
       , button [ class "remove-button", onClick (RemoveHop hop.id)] [ text "-"]
       ]
 
@@ -370,7 +366,6 @@ nextHopId hops =
         1
       Just number ->
         number + 1
-
 onChange : (String -> msg) -> Html.Attribute msg
 onChange tagger =
   on "change" (Json.Decode.map tagger Html.Events.targetValue)
