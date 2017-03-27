@@ -104,6 +104,7 @@ type Msg
   | SetAmount Hop String
   | HopTypeSelected Hop String
   | LoadHops (Result Http.Error HopComplete)
+  | SearchHops String
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -206,6 +207,8 @@ update msg model =
         ({model | hopComplete = hopComplete}, Cmd.none)
     LoadHops (Err _) ->
       ({ model | error = Just "Loading hops failed"}, Cmd.none)
+    SearchHops query ->
+      (model, searchHops query)
 
 
 -- VIEW
@@ -288,6 +291,7 @@ viewIbu ibu =
                 ]
             , button [ class "add-button", onClick AddHop ] [ text "Add hop"]
             ]
+      , viewHopList model
       ]
 
 viewHop : Hop -> Html Msg
@@ -320,6 +324,17 @@ viewHopType hop =
         , option [ selected (hop.hopType == "Pellet") ] [ text "Pellet"]
         ]
       ]
+
+viewHopList : Model -> Html Msg
+viewHopList model =
+  div []
+    [ input [placeholder "search hop", onInput SearchHops] []
+    , div [] (List.map viewHop2 model.hopComplete.hops)
+    ]
+
+viewHop2 : Hop2 -> Html Msg
+viewHop2 hop =
+  div [] [ text "test"]
 
 recalculate : Abv -> Abv
 recalculate abv =
@@ -431,6 +446,12 @@ decodeAlpha =
 initialCmd : Cmd Msg
 initialCmd =
   decodeHopComplete
-    |> Http.get "https://api.microbrew.it/hops?from=0&size=1000"
+    |> Http.get "https://api.microbrew.it/hops?from=0&size=10"
     |> Http.send LoadHops
 
+
+searchHops : String -> Cmd Msg
+searchHops query =
+    decodeHopComplete
+    |> Http.get ("https://api.microbrew.it/hops/search?query=" ++ query)
+    |> Http.send LoadHops
