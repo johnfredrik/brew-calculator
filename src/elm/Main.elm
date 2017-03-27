@@ -21,7 +21,6 @@ type alias Model =
   , ibu : Ibu
   , calculator : Calculator
   , error : Maybe String
-  , hopComplete : HopComplete
   }
 
 model : Model
@@ -30,7 +29,6 @@ model =
     , ibu = ibu
     , calculator = IbuCalculator
     , error = Nothing
-    , hopComplete = {hops = []}
     }
 
 type alias Abv =
@@ -66,11 +64,12 @@ type alias Ibu =
   , hops : List Hop
   , totalRager : Float
   , totalTinseth : Float
+  , hops2 : List Hop2
   }
 
 ibu : Ibu
 ibu = 
-  { og = 1.054, boilVolume = 20, hops = [], totalRager = 0, totalTinseth = 0}
+  { og = 1.054, boilVolume = 20, hops = [], totalRager = 0, totalTinseth = 0, hops2 = []}
     
 
 type alias Hop =
@@ -85,7 +84,7 @@ type alias Hop =
   }
 hop : Int -> Hop 
 hop id =
-  {id = id, name = "Hop2", aa = 0.0, amount = 0, boilTime = 0, rager = 0, tinseth = 0, hopType = "Whole"}
+  {id = id, name = "", aa = 0.0, amount = 0, boilTime = 0, rager = 0, tinseth = 0, hopType = "Whole"}
 
 type Calculator
   = AbvCalculator
@@ -99,12 +98,14 @@ type Msg
   | ChangeCalculator Calculator
   | AddHop
   | RemoveHop Int
+  | SetName Hop String
   | SetAlphaAcid Hop String
   | SetBoilTime Hop String
   | SetAmount Hop String
   | HopTypeSelected Hop String
   | LoadHops (Result Http.Error HopComplete)
   | SearchHops String
+  | AddMbHop Hop2
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -151,6 +152,14 @@ update msg model =
         newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
         ({ model | ibu = newIbu}, Cmd.none)
+    SetName hop name ->
+      let
+        updatedHop = {hop | name = name}
+        oldIbu = model.ibu
+        hops = List.map (updateHop updatedHop) oldIbu.hops
+        newIbu = { oldIbu | hops = hops}
+      in
+        ({model | ibu = newIbu}, Cmd.none)
     SetAlphaAcid hop alphaAcid ->
       let
         updatedHop = 
@@ -203,12 +212,28 @@ update msg model =
         newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
         ({model | ibu = newIbu}, Cmd.none)
-    LoadHops (Ok hopComplete) ->
-        ({model | hopComplete = hopComplete}, Cmd.none)
+    LoadHops (Ok hopComplete) ->  
+      let
+        oldIbu = model.ibu
+        newIbu = { oldIbu | hops2 = hopComplete.hops}
+      in
+        ({model | ibu = newIbu}, Cmd.none)
     LoadHops (Err _) ->
       ({ model | error = Just "Loading hops failed"}, Cmd.none)
     SearchHops query ->
-      (model, searchHops query)
+      if (String.length query) > 2 then
+        (model, searchHops query)
+      else 
+        (model, Cmd.none)
+    AddMbHop hop ->
+      let
+        newHop = { id = (nextHopId model.ibu.hops), name = hop.name, aa = hop.acid.alpha.low, amount = 0, boilTime = 0, rager = 0, tinseth = 0, hopType = "Whole"}
+        oldIbu = model.ibu
+        newIbu = { oldIbu | hops = (oldIbu.hops ++ [newHop])}
+      in
+        ({model | ibu = newIbu}, Cmd.none)
+
+    
 
 
 -- VIEW
@@ -269,7 +294,8 @@ viewIbu ibu =
             ]
       , div [] 
             [ div [ class "ibu-title"] 
-                  [ h5 [ class "ibu-input" ] [ text "Alpha Acids"] 
+                  [ h5 [ class "ibu-input" ] [ text "Name"] 
+                  , h5 [ class "ibu-input" ] [ text "Alpha Acids"] 
                   , h5 [ class "ibu-input" ] [ text "Amount"]
                   , h5 [ class "ibu-input" ] [ text "Boil Time"]
                   , h5 [ class "ibu-select" ] [ text "Hop Type" ]
@@ -291,13 +317,14 @@ viewIbu ibu =
                 ]
             , button [ class "add-button", onClick AddHop ] [ text "Add hop"]
             ]
-      , viewHopList model
+      , viewHopList ibu.hops2
       ]
 
 viewHop : Hop -> Html Msg
 viewHop hop =
   div [ class "hop"]
-      [ input [ class "ibu-input", defaultValue (toString hop.aa), onInput (SetAlphaAcid hop) ] []
+      [ input [ class "ibu-input", defaultValue hop.name, onInput (SetName hop)] []
+      , input [ class "ibu-input", defaultValue (toString hop.aa), onInput (SetAlphaAcid hop) ] []
       , input [ class "ibu-input", defaultValue (toString hop.amount), onInput (SetAmount hop) ] []
       , input [ class "ibu-input", defaultValue (toString hop.boilTime), onInput (SetBoilTime hop) ] []
       , select [ class "ibu-select", onChange (HopTypeSelected hop)] 
@@ -325,16 +352,21 @@ viewHopType hop =
         ]
       ]
 
-viewHopList : Model -> Html Msg
-viewHopList model =
+viewHopList : List Hop2 -> Html Msg
+viewHopList hops =
   div []
     [ input [placeholder "search hop", onInput SearchHops] []
-    , div [] (List.map viewHop2 model.hopComplete.hops)
+    , h5 [] [text "Hops:"]
+    , ul [] (List.map viewHop2 hops)
     ]
 
 viewHop2 : Hop2 -> Html Msg
 viewHop2 hop =
-  div [] [ text "test"]
+  li [ class "mb-hop"] 
+    [ div [ class "mb-hop-name" ] [text hop.name]
+    , div [] [text ((toString hop.acid.alpha.low) ++ "-" ++ (toString hop.acid.alpha.high))]
+    , button [ class "mb-hop-button", onClick (AddMbHop hop)] [text "add"]
+    ]
 
 recalculate : Abv -> Abv
 recalculate abv =
@@ -374,7 +406,7 @@ calculateTinseth hops =
 updateHop : Hop -> Hop -> Hop
 updateHop newHop oldHop =
   if newHop.id == oldHop.id then
-    { oldHop | aa = newHop.aa, boilTime = newHop.boilTime, amount = newHop.amount, hopType = newHop.hopType }
+    { oldHop | name = newHop.name, aa = newHop.aa, boilTime = newHop.boilTime, amount = newHop.amount, hopType = newHop.hopType }
   else
     oldHop
 
@@ -395,10 +427,6 @@ onChange tagger =
 
 
 --HTTP Stuff
-
--- getHopString : String -> Request String
--- getHopString url =
-
 
 type alias Hop2 =
   { id: Int
@@ -446,7 +474,7 @@ decodeAlpha =
 initialCmd : Cmd Msg
 initialCmd =
   decodeHopComplete
-    |> Http.get "https://api.microbrew.it/hops?from=0&size=10"
+    |> Http.get "https://api.microbrew.it/hops?from=0&size=200"
     |> Http.send LoadHops
 
 

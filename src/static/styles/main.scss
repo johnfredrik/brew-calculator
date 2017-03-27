@@ -218,3 +218,19 @@ input::-webkit-inner-spin-button {
     margin-top: 10px;
     height: 30px;
 }
+
+
+.mb-hop {
+    display: flex;
+    align-content: center;
+    align-items: center;
+    justify-content: space-between;
+    margin: 2px;
+}
+
+.mb-hop-name {
+    margin-right: 5px;
+}
+
+.mb-hop-button {
+}
