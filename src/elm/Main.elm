@@ -210,6 +210,8 @@ update msg model =
     SearchHops query ->
       if (String.length query) > 2 then
         (model, searchHops query)
+      else if (String.length query) == 0 then
+        (model, initialCmd)
       else 
         (model, Cmd.none)
     AddMbHop hop ->
@@ -302,7 +304,7 @@ viewIbu ibu =
                       , h5 [ class "ibu-total-value"] [ text  (Round.round 2 ibu.totalTinseth)]
                       ]
                 ]
-            , button [ class "add-button", onClick AddHop ] [ text "Add hop"]
+            , button [ class "add-button", onClick AddHop ] [ text "add new"]
             ]
       , viewHopList ibu.hopList
       ]
@@ -341,18 +343,23 @@ viewHopType hop =
 
 viewHopList : List Hop -> Html Msg
 viewHopList hops =
-  div []
-    [ input [placeholder "search hop", onInput SearchHops] []
-    , h5 [] [text "Hops:"]
-    , ul [] (List.map viewHop2 hops)
+  div [class "mb-hops"]
+    [ input [ class "mb-search", placeholder "search hop", onInput SearchHops] []
+    , div [ class "mb-title mb-hop"]
+      [ div [class "mb-hop-name"] [text "Name"]
+      , div [class "mb-hop-alpha"] [text "Alpha Acid Low"]
+      , div [] [text "Alpha Acid High"]
+      ]
+    , div [] (List.map viewHop2 hops)
     ]
 
 viewHop2 : Hop -> Html Msg
 viewHop2 hop =
-  li [ class "mb-hop"] 
+  div [ class "mb-hop"] 
     [ div [ class "mb-hop-name" ] [text hop.name]
-    , div [] [text ((toString hop.acid.alpha.low) ++ "-" ++ (toString hop.acid.alpha.high))]
-    , button [ class "mb-hop-button", onClick (AddMbHop hop)] [text "add"]
+    , div [ class "mb-hop-alpha" ] [text ((toString hop.acid.alpha.low) ++ "%")]
+    , div [ class "mb-hop-alpha" ] [text ((toString hop.acid.alpha.high) ++ "%")]
+    , button [ class "mb-hop-button", onClick (AddMbHop hop)] [text "add new"]
     ]
 
 recalculate : Abv -> Abv

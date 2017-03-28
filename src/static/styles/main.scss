@@ -9,7 +9,7 @@ body {
 
 button {
   //color: #fff;
-  background-color: #dbdbdb;
+  background-color: inherit;
   text-shadow: 1px 1px #a8a8a8;
   border: none;
   padding: 5px;
@@ -219,15 +219,51 @@ input::-webkit-inner-spin-button {
     height: 30px;
 }
 
+.mb-search {
+    padding: 5px;
+    margin-bottom: 5px;
+}
 
+.mb-hops {
+    margin-top: 20px;
+    margin-bottom: 5px; 
+}
+
+.mb-hops .mb-hop:nth-child(even) {
+    background-color: #f6f6f6;
+}
+
+.mb-hops .mb-hop:nth-child(odd) {
+    background-color: #dbdbdb;
+}
 .mb-hop {
+    padding-left: 5px;
+    padding-right: 5px;
     display: flex;
-    align-content: center;
     align-items: center;
-    justify-content: space-between;
-    margin: 2px;
+    //justify-content: space-between;
+}
+.mb-title {
+    font-weight: bold;
+}
+
+.mb-hop button {
+    background-color: inherit;
+    float: right;
+    margin-left: auto;
+
+
 }
 
 .mb-hop-name {
+    width: 150px;
     margin-right: 5px;
 }
+
+.mb-hop-alpha {
+    width: 110px;
+    margin-right: 5px;
+    text-align: center;
+}
+
+
