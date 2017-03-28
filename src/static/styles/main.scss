@@ -41,6 +41,7 @@ h5 {
 
 .header div {
     padding: 10px 20px 10px 20px;
+    cursor: pointer;
 }
 
 .formulas {
@@ -266,4 +267,10 @@ input::-webkit-inner-spin-button {
     text-align: center;
 }
 
+.srm-title {
+    display: flex;
+    align-content: center;
+    align-items: center;
+    justify-content: space-between;
+}
 

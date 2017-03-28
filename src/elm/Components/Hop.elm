@@ -76,14 +76,3 @@ updateHop newHop oldHop =
     { oldHop | name = newHop.name, aa = newHop.aa, boilTime = newHop.boilTime, amount = newHop.amount, hopType = newHop.hopType }
   else
     oldHop
-
-nextHopIndex : List Hop -> Int
-nextHopIndex hops = 
-  let 
-    indexes = List.map (\hop -> hop.index) hops
-  in
-    case (List.maximum indexes) of
-      Nothing ->
-        1
-      Just number ->
-        number + 1

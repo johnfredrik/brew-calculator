@@ -20,6 +20,7 @@ main =
 type alias Model =
   { abv : Abv
   , ibu : Ibu
+  , srm : Srm
   , calculator : Calculator
   , error : Maybe String
   }
@@ -28,7 +29,8 @@ model : Model
 model = 
     { abv = abv
     , ibu = ibu
-    , calculator = IbuCalculator
+    , srm = initSrm
+    , calculator = SrmCalculator
     , error = Nothing
     }
 
@@ -73,9 +75,22 @@ ibu =
   { og = 1.054, boilVolume = 20, hops = [], totalRager = 0, totalTinseth = 0, hopList = []}
 
 
+type alias Srm =
+  { daniels: Float
+  , fermentables: List Fermentable
+  , morey : Float 
+  , mosher: Float
+  , volume: Float
+  }
+
+initSrm : Srm
+initSrm =
+  {daniels = 0.0, fermentables = [], morey = 0.0, mosher = 0.0, volume = 0.0}
+
 type Calculator
   = AbvCalculator
   | IbuCalculator
+  | SrmCalculator
 
 --   UPDATE
 type Msg 
@@ -85,14 +100,18 @@ type Msg
   | ChangeCalculator Calculator
   | AddHop
   | RemoveHop Int
-  | SetName Hop String
-  | SetAlphaAcid Hop String
-  | SetBoilTime Hop String
-  | SetAmount Hop String
+  | SetHopName Hop String
+  | SetHopAlphaAcid Hop String
+  | SetHopBoilTime Hop String
+  | SetHopAmount Hop String
   | HopTypeSelected Hop String
   | LoadHops (Result Http.Error HopComplete)
   | SearchHops String
   | AddMbHop Hop
+  | SetFermentableName Fermentable String
+  | SetFermentableLovibond Fermentable String
+  | SetFermentableAmount Fermentable String
+  | AddFermentable
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -126,7 +145,7 @@ update msg model =
        ({ model | calculator = calculator}, Cmd.none)
     AddHop ->
       let
-        hopId = (nextHopIndex model.ibu.hops)
+        hopId = (nextIndex model.ibu.hops)
         oldIbu = model.ibu
         newIbu = { oldIbu | hops = (oldIbu.hops ++ [(Hop.init hopId) ])}
       in
@@ -139,7 +158,7 @@ update msg model =
         newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
         ({ model | ibu = newIbu}, Cmd.none)
-    SetName hop name ->
+    SetHopName hop name ->
       let
         updatedHop = {hop | name = name}
         oldIbu = model.ibu
@@ -147,7 +166,7 @@ update msg model =
         newIbu = { oldIbu | hops = hops}
       in
         ({model | ibu = newIbu}, Cmd.none)
-    SetAlphaAcid hop alphaAcid ->
+    SetHopAlphaAcid hop alphaAcid ->
       let
         updatedHop = 
           case (String.toFloat alphaAcid) of
@@ -161,7 +180,7 @@ update msg model =
         newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
         ({model | ibu = newIbu}, Cmd.none)
-    SetBoilTime hop boilTime ->
+    SetHopBoilTime hop boilTime ->
       let
         updatedHop = 
           case (String.toInt boilTime) of
@@ -175,7 +194,7 @@ update msg model =
         newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
         ({model | ibu = newIbu}, Cmd.none)
-    SetAmount hop amount ->
+    SetHopAmount hop amount ->
       let
         updatedHop = 
           case (String.toFloat amount) of
@@ -216,12 +235,24 @@ update msg model =
         (model, Cmd.none)
     AddMbHop hop ->
       let
-        newHop = { index = (nextHopIndex model.ibu.hops),id = hop.id, name = hop.name, aa = hop.acid.alpha.low, amount = 0, boilTime = 0, rager = 0, tinseth = 0, hopType = "Whole", acid = initAcid}
+        newHop = { index = (nextIndex model.ibu.hops),id = hop.id, name = hop.name, aa = hop.acid.alpha.low, amount = 0, boilTime = 0, rager = 0, tinseth = 0, hopType = "Whole", acid = initAcid}
         oldIbu = model.ibu
         newIbu = { oldIbu | hops = (oldIbu.hops ++ [newHop])}
       in
         ({model | ibu = newIbu}, Cmd.none)
-
+    SetFermentableName fermentable name ->
+      (model, Cmd.none)
+    SetFermentableLovibond fermentable lovibond ->
+      (model, Cmd.none)
+    SetFermentableAmount fermentalbe lovibond ->
+      (model, Cmd.none)
+    AddFermentable ->
+      let
+        fermentable = initFermentable (nextIndex model.srm.fermentables)
+        oldSrm = model.srm
+        newSrm = { oldSrm | fermentables = (oldSrm.fermentables ++ [fermentable]) }
+      in
+        ({model | srm = newSrm}, Cmd.none)
     
 
 
@@ -233,10 +264,12 @@ view model =
     [ div [ class "header" ] 
           [ div [ classList [("selected-header", model.calculator == AbvCalculator)], onClick (ChangeCalculator AbvCalculator)] [ text "ABV" ]
           , div [ classList [("selected-header", model.calculator == IbuCalculator)], onClick (ChangeCalculator IbuCalculator)] [ text "IBU" ]
+          , div [ classList [("selected-header", model.calculator == SrmCalculator)], onClick (ChangeCalculator SrmCalculator)] [ text "SRM" ]
           ]
     , div []  
           [ div [ classList [("hide", model.calculator /= AbvCalculator)] ] [viewAbv model.abv]
           , div [ classList [("hide", model.calculator /= IbuCalculator)] ] [viewIbu model.ibu]
+          , div [ classList [("hide", model.calculator /= SrmCalculator)] ] [viewSrm model.srm]
           ]
     ]
 
@@ -312,10 +345,10 @@ viewIbu ibu =
 viewHop : Hop -> Html Msg
 viewHop hop =
   div [ class "hop"]
-      [ input [ class "ibu-input", defaultValue hop.name, onInput (SetName hop)] []
-      , input [ class "ibu-input", defaultValue (toString hop.aa), onInput (SetAlphaAcid hop) ] []
-      , input [ class "ibu-input", defaultValue (toString hop.amount), onInput (SetAmount hop) ] []
-      , input [ class "ibu-input", defaultValue (toString hop.boilTime), onInput (SetBoilTime hop) ] []
+      [ input [ class "ibu-input", defaultValue hop.name, onInput (SetHopName hop)] []
+      , input [ class "ibu-input", defaultValue (toString hop.aa), onInput (SetHopAlphaAcid hop) ] []
+      , input [ class "ibu-input", defaultValue (toString hop.amount), onInput (SetHopAmount hop) ] []
+      , input [ class "ibu-input", defaultValue (toString hop.boilTime), onInput (SetHopBoilTime hop) ] []
       , select [ class "ibu-select", onChange (HopTypeSelected hop)] 
           [ option [ selected (hop.hopType == "Whole")] [ text "Whole"]
           , option [ selected (hop.hopType == "Pellet") ] [ text "Pellet"]
@@ -361,6 +394,53 @@ viewHop2 hop =
     , div [ class "mb-hop-alpha" ] [text ((toString hop.acid.alpha.high) ++ "%")]
     , button [ class "mb-hop-button", onClick (AddMbHop hop)] [text "add new"]
     ]
+
+viewSrm : Srm -> Html Msg
+viewSrm srm =
+  div [] 
+    [ label [] [ text "Volume"]
+    , input [ type_ "text", defaultValue (toString srm.volume)] []
+    , div [] 
+            [ div [ class "ibu-title"] 
+                  [ h5 [ class "ibu-input" ] [ text "Name"] 
+                  , h5 [ class "ibu-input" ] [ text "Lovibond"] 
+                  , h5 [ class "ibu-input" ] [ text "Amount"]
+                  , h5 [ class "ibu-text" ] [ text "Morey" ]
+                  , h5 [ class "ibu-text" ] [ text "Daniels" ]
+                  , h5 [ class "ibu-text" ] [ text "Mosher" ]
+                  ]
+            , div [ class "hops" ] (List.map viewFermentable srm.fermentables)
+            ]
+      , div [ class "ibu-totals"] 
+            [ div [] 
+                [ div [ class "ibu-total"] 
+                    [ h5 [] [ text "Mosher Total:" ]
+                    , h5 [class "ibu-total-value"] [ text (Round.round 2 srm.mosher)]
+                    ]
+                , div [ class "ibu-total"] 
+                      [ h5 [] [ text "Daniels Total:" ]
+                      , h5 [ class "ibu-total-value"] [ text  (Round.round 2 srm.daniels)]
+                      ]
+                , div [ class "ibu-total"] 
+                      [ h5 [] [ text "Morey Total:" ]
+                      , h5 [ class "ibu-total-value"] [ text  (Round.round 2 srm.morey)]
+                      ]
+                ]
+            , button [ class "add-button", onClick AddFermentable ] [ text "add new"]
+            ]
+    ]
+
+viewFermentable : Fermentable -> Html Msg
+viewFermentable fermentable =
+  div [ class "hop"]
+      [ input [ class "ibu-input", defaultValue fermentable.name, onInput (SetFermentableName fermentable)] []
+      , input [ class "ibu-input", defaultValue (toString fermentable.lovibond), onInput (SetFermentableLovibond fermentable) ] []
+      , input [ class "ibu-input", defaultValue (toString fermentable.amount), onInput (SetFermentableAmount fermentable) ] []
+      , div [ class "ibu-text"] [ text (Round.round 2 fermentable.morey) ]
+      , div [ class "ibu-text"] [ text (Round.round 2 fermentable.daniels) ]
+      , div [ class "ibu-text"] [ text (Round.round 2 fermentable.mosher) ]
+      , button [ class "remove-button", onClick (RemoveHop fermentable.index)] [ text "-"]
+      ]
 
 recalculate : Abv -> Abv
 recalculate abv =
@@ -418,3 +498,31 @@ searchHops query =
     decodeHopComplete
     |> Http.get ("https://api.microbrew.it/hops/search?query=" ++ query)
     |> Http.send LoadHops
+
+
+-- Fermentable
+type alias Fermentable =
+    { index : Int
+    , id : Int
+    , name : String
+    , lovibond : Float
+    , amount: Float
+    , morey : Float
+    , daniels : Float
+    , mosher : Float
+    }
+
+initFermentable : Int -> Fermentable
+initFermentable index =
+  {index = index, id = -1, name = "", lovibond = 30, amount = 0.0, morey = 0.0, daniels = 0.0, mosher = 0.0}
+
+nextIndex : List {a | index : Int} -> Int
+nextIndex items = 
+  let 
+    indexes = List.map (\item -> item.index) items
+  in
+    case (List.maximum indexes) of
+      Nothing ->
+        1
+      Just number ->
+        number + 1
