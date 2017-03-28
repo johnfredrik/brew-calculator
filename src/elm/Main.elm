@@ -4,8 +4,9 @@ import Html.Attributes exposing (..)
 import Html.Events exposing ( onInput, onClick,on )
 import Round exposing( round )
 import Components.Formula exposing(..)
+import Components.Hop exposing(..)
 import String
-import Json.Decode exposing (string, int, list, map, float, Decoder)
+import Json.Decode exposing (map)
 import Http
 
 
@@ -64,27 +65,13 @@ type alias Ibu =
   , hops : List Hop
   , totalRager : Float
   , totalTinseth : Float
-  , hops2 : List Hop2
+  , hopList : List Hop
   }
 
 ibu : Ibu
 ibu = 
-  { og = 1.054, boilVolume = 20, hops = [], totalRager = 0, totalTinseth = 0, hops2 = []}
-    
+  { og = 1.054, boilVolume = 20, hops = [], totalRager = 0, totalTinseth = 0, hopList = []}
 
-type alias Hop =
-  { id : Int
-  , name : String
-  , aa : Float
-  , amount : Float
-  , boilTime : Int
-  , rager : Float
-  , tinseth : Float
-  , hopType : String
-  }
-hop : Int -> Hop 
-hop id =
-  {id = id, name = "", aa = 0.0, amount = 0, boilTime = 0, rager = 0, tinseth = 0, hopType = "Whole"}
 
 type Calculator
   = AbvCalculator
@@ -105,7 +92,7 @@ type Msg
   | HopTypeSelected Hop String
   | LoadHops (Result Http.Error HopComplete)
   | SearchHops String
-  | AddMbHop Hop2
+  | AddMbHop Hop
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -139,15 +126,15 @@ update msg model =
        ({ model | calculator = calculator}, Cmd.none)
     AddHop ->
       let
-        hopId = (nextHopId model.ibu.hops)
+        hopId = (nextHopIndex model.ibu.hops)
         oldIbu = model.ibu
         newIbu = { oldIbu | hops = (oldIbu.hops ++ [(hop hopId) ])}
       in
         ({ model | ibu = newIbu}, Cmd.none)
-    RemoveHop id ->
+    RemoveHop index ->
       let
         oldIbu = model.ibu
-        hops = List.filter (\h -> h.id /= id) model.ibu.hops
+        hops = List.filter (\h -> h.index /= index) model.ibu.hops
                 |> List.map (recalculateIbu ibu.boilVolume ibu.og)
         newIbu = { oldIbu | hops = hops, totalRager = calculateRager hops, totalTinseth = calculateTinseth hops}
       in
@@ -215,7 +202,7 @@ update msg model =
     LoadHops (Ok hopComplete) ->  
       let
         oldIbu = model.ibu
-        newIbu = { oldIbu | hops2 = hopComplete.hops}
+        newIbu = { oldIbu | hopList = hopComplete.hops}
       in
         ({model | ibu = newIbu}, Cmd.none)
     LoadHops (Err _) ->
@@ -227,7 +214,7 @@ update msg model =
         (model, Cmd.none)
     AddMbHop hop ->
       let
-        newHop = { id = (nextHopId model.ibu.hops), name = hop.name, aa = hop.acid.alpha.low, amount = 0, boilTime = 0, rager = 0, tinseth = 0, hopType = "Whole"}
+        newHop = { index = (nextHopIndex model.ibu.hops),id = hop.id, name = hop.name, aa = hop.acid.alpha.low, amount = 0, boilTime = 0, rager = 0, tinseth = 0, hopType = "Whole", acid = initAcid}
         oldIbu = model.ibu
         newIbu = { oldIbu | hops = (oldIbu.hops ++ [newHop])}
       in
@@ -317,7 +304,7 @@ viewIbu ibu =
                 ]
             , button [ class "add-button", onClick AddHop ] [ text "Add hop"]
             ]
-      , viewHopList ibu.hops2
+      , viewHopList ibu.hopList
       ]
 
 viewHop : Hop -> Html Msg
@@ -333,7 +320,7 @@ viewHop hop =
           ]
       , div [ class "ibu-text"] [ text (Round.round 2 hop.rager) ]
       , div [ class "ibu-text"] [ text (Round.round 2 hop.tinseth) ]
-      , button [ class "remove-button", onClick (RemoveHop hop.id)] [ text "-"]
+      , button [ class "remove-button", onClick (RemoveHop hop.index)] [ text "-"]
       ]
 
 viewFormula : String -> Float -> Html Msg
@@ -352,7 +339,7 @@ viewHopType hop =
         ]
       ]
 
-viewHopList : List Hop2 -> Html Msg
+viewHopList : List Hop -> Html Msg
 viewHopList hops =
   div []
     [ input [placeholder "search hop", onInput SearchHops] []
@@ -360,7 +347,7 @@ viewHopList hops =
     , ul [] (List.map viewHop2 hops)
     ]
 
-viewHop2 : Hop2 -> Html Msg
+viewHop2 : Hop -> Html Msg
 viewHop2 hop =
   li [ class "mb-hop"] 
     [ div [ class "mb-hop-name" ] [text hop.name]
@@ -403,23 +390,6 @@ calculateTinseth hops =
   List.map (\hop -> hop.tinseth) hops
     |> List.sum
 
-updateHop : Hop -> Hop -> Hop
-updateHop newHop oldHop =
-  if newHop.id == oldHop.id then
-    { oldHop | name = newHop.name, aa = newHop.aa, boilTime = newHop.boilTime, amount = newHop.amount, hopType = newHop.hopType }
-  else
-    oldHop
-
-nextHopId : List Hop -> Int
-nextHopId hops = 
-  let 
-    ids = List.map (\hop -> hop.id) hops
-  in
-    case (List.maximum ids) of
-      Nothing ->
-        1
-      Just number ->
-        number + 1
 onChange : (String -> msg) -> Html.Attribute msg
 onChange tagger =
   on "change" (Json.Decode.map tagger Html.Events.targetValue)
@@ -428,53 +398,11 @@ onChange tagger =
 
 --HTTP Stuff
 
-type alias Hop2 =
-  { id: Int
-  , name : String
-  , acid : Acid
-  }
-
-type alias Acid =
-  { alpha : Alpha }
-
-type alias Alpha =
-  { low: Float, high: Float}
-
-
-type alias HopComplete = 
-  { hops: List Hop2 }
-
-decodeHopComplete : Decoder HopComplete
-decodeHopComplete = 
-  Json.Decode.map 
-    HopComplete
-    (Json.Decode.field "hops" (Json.Decode.list decodeHop2))
-
-decodeHop2 : Decoder Hop2
-decodeHop2 =
-  Json.Decode.map3
-    Hop2
-    (Json.Decode.field "hopId" int)
-    (Json.Decode.field "name" string)
-    (Json.Decode.field "acids" decodeAcid)
-
-decodeAcid : Decoder Acid
-decodeAcid =
-  Json.Decode.map
-    Acid
-    (Json.Decode.field "alpha" decodeAlpha)
-
-decodeAlpha : Decoder Alpha
-decodeAlpha =
-  Json.Decode.map2
-    Alpha
-    (Json.Decode.field "low" Json.Decode.float)
-    (Json.Decode.field "high" Json.Decode.float)
 
 initialCmd : Cmd Msg
 initialCmd =
   decodeHopComplete
-    |> Http.get "https://api.microbrew.it/hops?from=0&size=200"
+    |> Http.get "https://api.microbrew.it/hops?from=0&size=10"
     |> Http.send LoadHops
 
 
