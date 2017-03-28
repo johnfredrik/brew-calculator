@@ -15,20 +15,20 @@ type alias Hop =
   , acid : Acid
   }
 
-hop : Int -> Hop 
-hop index =
-  {index = index, id = -1, name = "", aa = 0.0, amount = 0, boilTime = 0, rager = 0, tinseth = 0, hopType = "Whole", acid =  initAcid }
+init : Int -> Hop 
+init index =
+  { index = index
+  , id = -1, name = ""
+  , aa = 0.0, amount = 0
+  , boilTime = 0, rager = 0
+  , tinseth = 0
+  , hopType = "Whole"
+  , acid =  initAcid 
+  }
 
 initAcid : Acid
 initAcid =
   { alpha = { low = 0, high = 0} }
-
-
-type alias Hop2 =
-  { id: Int
-  , name : String
-  , acid : Acid
-  }
 
 type alias Acid =
   { alpha : Alpha }
@@ -54,33 +54,21 @@ decodeHop =
     |> Json.Decode.Pipeline.hardcoded "Whole"
     |> Json.Decode.Pipeline.required "acids" decodeAcid
 
-
-decodeHop2 : Decoder Hop2
-decodeHop2 =
-  Json.Decode.map3
-    Hop2
-    (Json.Decode.field "hopId" int)
-    (Json.Decode.field "name" string)
-    (Json.Decode.field "acids" decodeAcid)
-
 decodeAcid : Decoder Acid
 decodeAcid =
-  Json.Decode.map
-    Acid
-    (Json.Decode.field "alpha" decodeAlpha)
+   decode Acid
+    |> required "alpha" decodeAlpha
 
 decodeAlpha : Decoder Alpha
 decodeAlpha =
-  Json.Decode.map2
-    Alpha
-    (Json.Decode.field "low" Json.Decode.float)
-    (Json.Decode.field "high" Json.Decode.float)
+  decode Alpha
+    |> required "low" float
+    |> required "high" float
 
 decodeHopComplete : Decoder HopComplete
 decodeHopComplete = 
-  Json.Decode.map
-    HopComplete
-    (Json.Decode.field "hops" (Json.Decode.list decodeHop))
+  decode HopComplete
+    |> required "hops" (Json.Decode.list decodeHop)
 
 updateHop : Hop -> Hop -> Hop
 updateHop newHop oldHop =
