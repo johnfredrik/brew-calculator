@@ -112,6 +112,7 @@ type Msg
   | SetFermentableLovibond Fermentable String
   | SetFermentableAmount Fermentable String
   | AddFermentable
+  | RemoveFermentable Int
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -253,7 +254,13 @@ update msg model =
         newSrm = { oldSrm | fermentables = (oldSrm.fermentables ++ [fermentable]) }
       in
         ({model | srm = newSrm}, Cmd.none)
-    
+    RemoveFermentable index ->
+      let
+        oldSrm = model.srm
+        fermentables = List.filter (\f -> f.index /= index) model.srm.fermentables
+        newSrm = { oldSrm | fermentables = fermentables}
+      in
+        ({ model | srm = newSrm}, Cmd.none)  
 
 
 -- VIEW
@@ -439,7 +446,7 @@ viewFermentable fermentable =
       , div [ class "ibu-text"] [ text (Round.round 2 fermentable.morey) ]
       , div [ class "ibu-text"] [ text (Round.round 2 fermentable.daniels) ]
       , div [ class "ibu-text"] [ text (Round.round 2 fermentable.mosher) ]
-      , button [ class "remove-button", onClick (RemoveHop fermentable.index)] [ text "-"]
+      , button [ class "remove-button", onClick (RemoveFermentable fermentable.index)] [ text "-"]
       ]
 
 recalculate : Abv -> Abv
@@ -515,6 +522,16 @@ type alias Fermentable =
 initFermentable : Int -> Fermentable
 initFermentable index =
   {index = index, id = -1, name = "", lovibond = 30, amount = 0.0, morey = 0.0, daniels = 0.0, mosher = 0.0}
+
+recalculateSrm : Float -> Fermentable -> Fermentable
+recalculateSrm volume fermentable =
+    {fermentable 
+      | mosher = (mosher fermentable.amount fermentable.lovibond volume)
+      , morey = (morey fermentable.amount fermentable.lovibond volume)
+      , daniels = (mosher fermentable.amount fermentable.lovibond volume)
+    }
+
+
 
 nextIndex : List {a | index : Int} -> Int
 nextIndex items = 

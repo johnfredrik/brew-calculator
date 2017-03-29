@@ -81,5 +81,28 @@ tinsetUtilisation boilTime boilGravity =
     boilTimeFactor = (1 - (e^(-0.04 * boilTime))) / 4.15
   in
     bignessFactor * boilTimeFactor
-    
 
+mcu: Float -> Float -> Float -> Float
+mcu weight lovibond postBoilVolume =
+  weight*lovibond / postBoilVolume
+
+morey: Float -> Float -> Float -> Float
+morey weight lovibond postBoilVolume =
+  let 
+    value = mcu weight lovibond postBoilVolume
+  in
+    1.4922 * (value^0.6859)
+
+daniels: Float -> Float -> Float -> Float
+daniels weight lovibond postBoilVolume =
+  let 
+    value = mcu weight lovibond postBoilVolume
+  in
+    (0.2 * value) + 8.4
+
+mosher: Float -> Float -> Float -> Float
+mosher weight lovibond postBoilVolume =
+  let 
+    value = mcu weight lovibond postBoilVolume
+  in
+    (0.3 * value) + 4.7
