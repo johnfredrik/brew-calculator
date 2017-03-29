@@ -84,25 +84,22 @@ tinsetUtilisation boilTime boilGravity =
 
 mcu: Float -> Float -> Float -> Float
 mcu weight lovibond postBoilVolume =
-  weight*lovibond / postBoilVolume
+  let
+    value = (weight*lovibond) / postBoilVolume
+  in
+    if isInfinite value then
+      0
+    else 
+      value
 
 morey: Float -> Float -> Float -> Float
 morey weight lovibond postBoilVolume =
-  let 
-    value = mcu weight lovibond postBoilVolume
-  in
-    1.4922 * (value^0.6859)
+    1.4922 * ((mcu weight lovibond postBoilVolume)^0.6859)
 
 daniels: Float -> Float -> Float -> Float
 daniels weight lovibond postBoilVolume =
-  let 
-    value = mcu weight lovibond postBoilVolume
-  in
-    (0.2 * value) + 8.4
+  (0.2 * (mcu weight lovibond postBoilVolume)) + 8.4
 
 mosher: Float -> Float -> Float -> Float
 mosher weight lovibond postBoilVolume =
-  let 
-    value = mcu weight lovibond postBoilVolume
-  in
-    (0.3 * value) + 4.7
+  (0.3 * (mcu weight lovibond postBoilVolume)) + 4.7

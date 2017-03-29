@@ -85,7 +85,7 @@ type alias Srm =
 
 initSrm : Srm
 initSrm =
-  {daniels = 0.0, fermentables = [], morey = 0.0, mosher = 0.0, volume = 0.0}
+  {daniels = 0.0, fermentables = [], morey = 0.0, mosher = 0.0, volume = 20.0}
 
 type Calculator
   = AbvCalculator
@@ -108,6 +108,7 @@ type Msg
   | LoadHops (Result Http.Error HopComplete)
   | SearchHops String
   | AddMbHop Hop
+  | SetSrmVolume String
   | SetFermentableName Fermentable String
   | SetFermentableLovibond Fermentable String
   | SetFermentableAmount Fermentable String
@@ -241,12 +242,55 @@ update msg model =
         newIbu = { oldIbu | hops = (oldIbu.hops ++ [newHop])}
       in
         ({model | ibu = newIbu}, Cmd.none)
+    SetSrmVolume volume ->
+      let
+        oldSrm = model.srm
+        v = 
+          case (String.toFloat volume) of
+            Ok number ->
+              number
+            Err _ ->
+              oldSrm.volume
+        fermentables = List.map (recalculateSrm v) oldSrm.fermentables
+        newSrm = updateSrm oldSrm fermentables
+      in
+        ( {model | srm = newSrm}, Cmd.none)
     SetFermentableName fermentable name ->
-      (model, Cmd.none)
+      let
+        updatedFermentable = {fermentable | name = name }
+        oldSrm = model.srm
+        fermentables = List.map (updateFermentable updatedFermentable) oldSrm.fermentables
+        newSrm = {oldSrm | fermentables = fermentables}
+      in
+        ({model | srm = newSrm}, Cmd.none)
     SetFermentableLovibond fermentable lovibond ->
-      (model, Cmd.none)
-    SetFermentableAmount fermentalbe lovibond ->
-      (model, Cmd.none)
+      let
+        updatedFermentable = 
+          case (String.toFloat lovibond) of
+            Ok number ->
+              {fermentable | lovibond = number}
+            Err error ->
+              fermentable
+        oldSrm = model.srm
+        fermentables = List.map (updateFermentable updatedFermentable) oldSrm.fermentables
+          |> List.map (recalculateSrm oldSrm.volume)
+        newSrm = updateSrm oldSrm fermentables
+      in
+        ({model | srm = newSrm}, Cmd.none)
+    SetFermentableAmount fermentable amount ->
+      let
+        updatedFermentable = 
+          case (String.toFloat amount) of
+            Ok number ->
+              {fermentable | amount = number}
+            Err error ->
+              fermentable
+        oldSrm = model.srm
+        fermentables = List.map (updateFermentable updatedFermentable) oldSrm.fermentables
+          |> List.map (recalculateSrm oldSrm.volume)
+        newSrm = updateSrm oldSrm fermentables
+      in
+        ({model | srm = newSrm}, Cmd.none)
     AddFermentable ->
       let
         fermentable = initFermentable (nextIndex model.srm.fermentables)
@@ -406,7 +450,7 @@ viewSrm : Srm -> Html Msg
 viewSrm srm =
   div [] 
     [ label [] [ text "Volume"]
-    , input [ type_ "text", defaultValue (toString srm.volume)] []
+    , input [ type_ "text", defaultValue (toString srm.volume), onInput SetSrmVolume] []
     , div [] 
             [ div [ class "ibu-title"] 
                   [ h5 [ class "ibu-input" ] [ text "Name"] 
@@ -530,6 +574,29 @@ recalculateSrm volume fermentable =
       , morey = (morey fermentable.amount fermentable.lovibond volume)
       , daniels = (mosher fermentable.amount fermentable.lovibond volume)
     }
+
+updateFermentable : Fermentable -> Fermentable -> Fermentable
+updateFermentable newFermentable oldFermentable =
+  if newFermentable.index == oldFermentable.index then
+    { oldFermentable 
+    | name = newFermentable.name
+    , lovibond = newFermentable.lovibond
+    , amount = newFermentable.amount
+    , morey = newFermentable.amount
+    , mosher = newFermentable.mosher
+    , daniels = newFermentable.daniels
+    }
+  else
+    oldFermentable
+
+updateSrm : Srm -> List Fermentable -> Srm
+updateSrm srm fermentables =
+  { srm 
+  | fermentables = fermentables
+  , morey = (List.map (\f -> f.morey) fermentables |> List.sum)
+  , mosher = (List.map (\f -> f.mosher) fermentables |> List.sum)
+  , daniels = (List.map (\f -> f.daniels) fermentables |> List.sum)
+  }
 
 
 
