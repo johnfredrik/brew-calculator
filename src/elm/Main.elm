@@ -487,9 +487,9 @@ viewFermentable fermentable =
       [ input [ class "ibu-input", defaultValue fermentable.name, onInput (SetFermentableName fermentable)] []
       , input [ class "ibu-input", defaultValue (toString fermentable.lovibond), onInput (SetFermentableLovibond fermentable) ] []
       , input [ class "ibu-input", defaultValue (toString fermentable.amount), onInput (SetFermentableAmount fermentable) ] []
-      , div [ class "ibu-text"] [ text (Round.round 2 fermentable.morey) ]
-      , div [ class "ibu-text"] [ text (Round.round 2 fermentable.daniels) ]
-      , div [ class "ibu-text"] [ text (Round.round 2 fermentable.mosher) ]
+      , div [ class "ibu-text", style [("background-color", (getColor fermentable.morey))]] [ text (Round.round 2 fermentable.morey) ]
+      , div [ class "ibu-text", style [("background-color", (getColor fermentable.daniels))]] [ text (Round.round 2 fermentable.daniels) ]
+      , div [ class "ibu-text", style [("background-color", (getColor fermentable.mosher))]] [ text (Round.round 2 fermentable.mosher) ]
       , button [ class "remove-button", onClick (RemoveFermentable fermentable.index)] [ text "-"]
       ]
 
@@ -587,7 +587,9 @@ updateFermentable newFermentable oldFermentable =
     , daniels = newFermentable.daniels
     }
   else
-    oldFermentable
+    oldFermentable 
+
+
 
 updateSrm : Srm -> List Fermentable -> Srm
 updateSrm srm fermentables =
@@ -599,11 +601,10 @@ updateSrm srm fermentables =
   }
 
 
-
 nextIndex : List {a | index : Int} -> Int
 nextIndex items = 
   let 
-    indexes = List.map (\item -> item.index) items
+    indexes = List.map .index items
   in
     case (List.maximum indexes) of
       Nothing ->
