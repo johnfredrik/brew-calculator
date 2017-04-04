@@ -2,6 +2,7 @@ $icon-font-path: '~bootstrap-sass/assets/fonts/bootstrap/';
 @import '~bootstrap-sass/assets/stylesheets/bootstrap/_mixins.scss';
 @import '~bootstrap-sass/assets/stylesheets/_bootstrap.scss';
 
+$breakpoint-alpha: 480px;
 // can add Boostrap overrides, additional Sass/CSS below...
 body {
     background-color: #f6f6f6;
@@ -17,7 +18,7 @@ button {
 
 h5 {
     font-weight: bold;
-    font-size: 16px;
+    font-size: 10px;
 }
 
 .content {
@@ -28,7 +29,7 @@ h5 {
 }
 
 .content h1 {
-    font-size: 3em;
+    font-size: 2em;
 }
 
 .header {
@@ -47,7 +48,7 @@ h5 {
 .formulas {
     display: flex;
     flex-flow: column wrap;
-    width: 350px;
+    //width: 350px;
 }
 
 .formulas .formula:nth-child(even) {
@@ -68,7 +69,7 @@ h5 {
 }
 
 .formula .title {
-    width: 210px;
+    //width: 210px;
 }
 
 .formula .value {
@@ -84,7 +85,7 @@ h5 {
 .inputs {
     display: flex;
     flex-flow: row wrap;
-    width: 120px;
+    //width: 120px;
     align-items: center;
 }
 
@@ -105,172 +106,94 @@ input::-webkit-inner-spin-button {
     margin: 0;
 }
 
-.hide {
-    display: none;
-}
-
 .selected-header {
     background-color: lightblue;
 }
 
-
-.ibu-calculator {
-    display: flex;
-    flex-flow: column wrap;
-}
-
-.ibu-overhead label {
-    width: 150px;
+.rwd-table {
+  margin: 1em 0;
+  min-width: 300px; // adjust to your needs
+  
+  tr {
+    //border-top: 1px solid #ddd;
+    //border-bottom: 1px solid #ddd;
+    &:nth-child(odd) {
+        background-color: #f6f6f6;
+    }
+    &:nth-child(even) {
+        background-color: #dbdbdb;
+    }
+  }
+  
+  th {
+    display: none; // for accessibility, use a visually hidden method here instead! Thanks, reddit!   
+  }
+  
+  td {
+    display: block; 
     
+    &:first-child {
+      padding-top: .5em;
+    }
+    &:last-child {
+      padding-bottom: .5em;
+    }
+
+    &:before {
+      content: attr(data-th)" ";
+      font-weight: bold;
+
+      // optional stuff to make it look nicer
+      width: 7em; // magic number :( adjust according to your own content
+      display: inline-block;
+      // end options
+      
+      @media (min-width: $breakpoint-alpha) {
+        display: none;
+      }
+    }
+  }
+  
+  th, td {
+    text-align: left;
+    
+    @media (min-width: $breakpoint-alpha) {
+      display: table-cell;
+      padding: .25em .5em;
+      &:first-child {
+        padding-left: 0;
+      }
+      &:last-child {
+        padding-right: 0;
+      }
+    }
+  }
 }
 
-.ibu-overhead input {
-    width: 50px;
-    margin: 2px 5px 2px 5px;
-    text-align: center;
+// body {
+//   padding: 0 2em;
+//   font-family: Montserrat, sans-serif;
+//   -webkit-font-smoothing: antialiased;
+//   text-rendering: optimizeLegibility;
+//   color: #444;
+//   background: #eee;
+// }
+
+.rwd-table {
+  //background: #34495E;
+  color: #000;
+  border-radius: .4em;
+  overflow: hidden;
+  tr {
+    //border-color: lighten(#000, 10%);
+  }
+  th, td {
+    margin: .5em 1em;
+    @media (min-width: $breakpoint-alpha) { 
+      padding: 1em !important;
+    }
+  }
+//   th, td:before {
+//     color: #000;
+//   }
 }
-
-.ibu-title {
-    display: flex;
-    padding: 4px;
-
-}
-
-.remove-button {
-    height: 75%;
-}
-
-.hops .hop:nth-child(even) {
-    background-color: #f6f6f6;
-}
-
-.hops .hop:nth-child(odd) {
-    background-color: #dbdbdb;
-}
-
-.hops {
-    display: flex;
-    flex-flow: column wrap;
-}
-
-.hop {
-    padding: 4px;
-    display: flex;
-    flex-flow: row wrap;
-    align-items: baseline;
-    text-align: center;
-}
-
-.hop input {
-    background-color: #f9f9f9;
-}
-
-.hop button {
-    background-color: inherit;
-    margin: auto;
-}
-
-.hop select {
-    background-color: #f9f9f9;
-    border-width: 2px;
-    border-style: inset;
-    border-color: initial;
-    border-image: initial;
-    align-self: stretch;
-}
-
-.ibu-input {
-    width: 100px;
-    margin: 2px;
-    padding: 2px;
-}
-
-
-.ibu-text {
-    width: 60px;
-    margin: 2px;
-    padding: 1px;
-    text-align: center;
-    vertical-align: middle;
-}
-
-.ibu-select {
-    width: 100px;
-    margin: 2px;
-    padding: 2px;
-    height: 100%;
-}
-
-.ibu-totals {
-    display: flex;
-    margin-top: 10px;
-    justify-content: space-between;
-}
-
-.ibu-total {
-    display: flex;
-    justify-content: space-between;
-}
-
-.ibu-total-value {
-    margin-left: 10px;
-}
-.add-button {
-    margin-top: 10px;
-    height: 30px;
-}
-
-.mb-search {
-    padding: 5px;
-    margin-bottom: 5px;
-}
-
-.mb-hops {
-    margin-top: 20px;
-    margin-bottom: 5px; 
-}
-
-.mb-hops .mb-hop:nth-child(even) {
-    background-color: #f6f6f6;
-}
-
-.mb-hops .mb-hop:nth-child(odd) {
-    background-color: #dbdbdb;
-}
-.mb-hop {
-    padding-left: 5px;
-    padding-right: 5px;
-    display: flex;
-    align-items: center;
-    //justify-content: space-between;
-}
-.mb-title {
-    font-weight: bold;
-}
-
-.mb-hop button {
-    background-color: inherit;
-    float: right;
-    margin-left: auto;
-
-
-}
-
-.mb-hop-name {
-    width: 150px;
-    margin-right: 5px;
-}
-
-.mb-hop-alpha {
-    width: 110px;
-    margin-right: 5px;
-    text-align: center;
-}
-
-.srm-title {
-    display: flex;
-    align-content: center;
-    align-items: center;
-    justify-content: space-between;
-}
-

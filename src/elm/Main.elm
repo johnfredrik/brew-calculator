@@ -367,48 +367,42 @@ viewIbu ibu =
             [ label [] [text "Original Gravity" ]
             , input [ defaultValue (toString ibu.og)] []
             ]
-      , div [] 
-            [ div [ class "ibu-title"] 
-                  [ h5 [ class "ibu-input" ] [ text "Name"] 
-                  , h5 [ class "ibu-input" ] [ text "Alpha Acids"] 
-                  , h5 [ class "ibu-input" ] [ text "Amount"]
-                  , h5 [ class "ibu-input" ] [ text "Boil Time"]
-                  , h5 [ class "ibu-select" ] [ text "Hop Type" ]
-                  , h5 [ class "ibu-text" ] [ text "Rager" ]
-                  , h5 [ class "ibu-text" ] [ text "Tinseth" ]
-                  ]
-            , div [ class "hops" ] (List.map viewHop ibu.hops)
-            ]
-      , div [ class "ibu-totals"] 
-            [ div [] 
-                [ div [ class "ibu-total"] 
-                    [ h5 [] [ text "Rager Total:" ]
-                    , h5 [class "ibu-total-value"] [ text (Round.round 2 ibu.totalRager)]
-                    ]
-                , div [ class "ibu-total"] 
-                      [ h5 [] [ text "Tinseth Total:" ]
-                      , h5 [ class "ibu-total-value"] [ text  (Round.round 2 ibu.totalTinseth)]
-                      ]
-                ]
-            , button [ class "add-button", onClick AddHop ] [ text "add new"]
-            ]
+      , (viewHopTable ibu.hops)
+      , button [ class "add-button", onClick AddHop ] [ text "add new"]
       , viewHopList ibu.hopList
       ]
 
-viewHop : Hop -> Html Msg
-viewHop hop =
-  div [ class "hop"]
-      [ input [ class "ibu-input", defaultValue hop.name, onInput (SetHopName hop)] []
-      , input [ class "ibu-input", defaultValue (toString hop.aa), onInput (SetHopAlphaAcid hop) ] []
-      , input [ class "ibu-input", defaultValue (toString hop.amount), onInput (SetHopAmount hop) ] []
-      , input [ class "ibu-input", defaultValue (toString hop.boilTime), onInput (SetHopBoilTime hop) ] []
-      , select [ class "ibu-select", onChange (HopTypeSelected hop)] 
+viewHopTable : List Hop -> Html Msg
+viewHopTable hops =
+  table [ class "rwd-table"] (
+   tr [] 
+      [ th [] [ text "Name"]
+      , th [] [ text "Alpha Acids"]
+      , th [] [ text "Amount"]
+      , th [] [ text "BoilTime" ]
+      , th [] [ text "Type" ]
+      , th [] [ text "Rager" ]
+      , th [] [ text "Tinseth"]
+      ]
+     :: (List.map viewHopRow hops))
+
+viewHopRow : Hop -> Html Msg
+viewHopRow hop = 
+  tr []
+      [ td [ attribute "data-th" "Name" ] [ input [ defaultValue hop.name, onInput (SetHopName hop)] [] ]
+      , td [ attribute "data-th" "Alpha Acids"] [ input [ defaultValue (toString hop.aa), onInput (SetHopAlphaAcid hop) ] [] ]
+      , td [ attribute "data-th" "Amount"] [ input [ defaultValue (toString hop.amount), onInput (SetHopAmount hop) ] [] ]
+      , td [ attribute "data-th" "BoilTime"] [ input [ defaultValue (toString hop.boilTime), onInput (SetHopBoilTime hop) ] [] ]
+      , td [ attribute "data-th" "Type" ] 
+        [
+          select [ onChange (HopTypeSelected hop)] 
           [ option [ selected (hop.hopType == "Whole")] [ text "Whole"]
           , option [ selected (hop.hopType == "Pellet") ] [ text "Pellet"]
           ]
-      , div [ class "ibu-text"] [ text (Round.round 2 hop.rager) ]
-      , div [ class "ibu-text"] [ text (Round.round 2 hop.tinseth) ]
-      , button [ class "remove-button", onClick (RemoveHop hop.index)] [ text "-"]
+        ]
+      , td [ attribute "data-th" "Rager" ] [ text (Round.round 2 hop.rager) ]
+      , td [ attribute "data-th" "Tinseth" ] [ text (Round.round 2 hop.tinseth) ]
+      , td [] [ button [ class "remove-button", onClick (RemoveHop hop.index)] [ text "Remove"]]
       ]
 
 viewFormula : String -> Float -> Html Msg
@@ -429,17 +423,17 @@ viewHopType hop =
 
 viewHopList : List Hop -> Html Msg
 viewHopList hops =
-  div [class "mb-hops"]
-    [ input [ class "mb-search", placeholder "search hop", onInput SearchHops] []
-    , div [] (List.map viewHop2 hops)
+  div []
+    [ input [ placeholder "search hop", onInput SearchHops] []
+    , div [] (List.map viewHop hops)
     ]
 
-viewHop2 : Hop -> Html Msg
-viewHop2 hop =
-  div [ class "mb-hop"] 
-    [ div [ class "mb-hop-name" ] [text hop.name]
-    , div [ class "mb-hop-alpha" ] [text ("(" ++ (toString hop.acid.alpha.low) ++ " - " ++(toString hop.acid.alpha.high) ++ ")")]
-    , button [ class "mb-hop-button", onClick (AddMbHop hop)] [text "add new"]
+viewHop : Hop -> Html Msg
+viewHop hop =
+  div [] 
+    [ span [] [text hop.name]
+    , span [] [text ("(" ++ (toString hop.acid.alpha.low) ++ " - " ++(toString hop.acid.alpha.high) ++ ")")]
+    , button [ onClick (AddMbHop hop)] [text "add"]
     ]
 
 viewSrm : Srm -> Html Msg
