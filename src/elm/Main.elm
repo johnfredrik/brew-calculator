@@ -32,7 +32,7 @@ model =
     { abv = abv
     , ibu = ibu
     , srm = initSrm
-    , calculator = IbuCalculator
+    , calculator = SrmCalculator
     , error = Nothing
     }
 
@@ -441,49 +441,62 @@ viewSrm srm =
   div [] 
     [ label [] [ text "Volume"]
     , input [ type_ "text", defaultValue (toString srm.volume), onInput SetSrmVolume] []
-    , div [] 
-            [ div [ class "ibu-title"] 
-                  [ h5 [ class "ibu-input" ] [ text "Name"] 
-                  , h5 [ class "ibu-input" ] [ text "Lovibond"] 
-                  , h5 [ class "ibu-input" ] [ text "Amount"]
-                  , h5 [ class "ibu-text" ] [ text "Morey" ]
-                  , h5 [ class "ibu-text" ] [ text "Daniels" ]
-                  , h5 [ class "ibu-text" ] [ text "Mosher" ]
-                  ]
-            , div [ class "hops" ] (List.map viewFermentable srm.fermentables)
-            ]
-      , div [ class "ibu-totals"] 
-            [ div [] 
-                [ div [ class "ibu-total"] 
-                    [ h5 [] [ text "Mosher Total:" ]
-                    , h5 [class "ibu-total-value"] [ text (Round.round 2 srm.mosher)]
-                    ]
-                , div [ class "ibu-total"] 
-                      [ h5 [] [ text "Daniels Total:" ]
-                      , h5 [ class "ibu-total-value"] [ text  (Round.round 2 srm.daniels)]
-                      ]
-                , div [ class "ibu-total"] 
-                      [ h5 [] [ text "Morey Total:" ]
-                      , h5 [ class "ibu-total-value"] [ text  (Round.round 2 srm.morey)]
-                      ]
-                ]
-            , button [ class "add-button", onClick AddFermentable ] [ text "add new"]
-            ]
+    , viewTotalSrm srm
+    , viewFermentableTable srm.fermentables 
+    , button [onClick AddFermentable ] [ text "add"]
     ]
 
-viewFermentable : Fermentable -> Html Msg
-viewFermentable fermentable =
-  div [ class "hop"]
-      [ input [ class "ibu-input", defaultValue fermentable.name, onInput (SetFermentableName fermentable)] []
-      , input [ class "ibu-input", defaultValue (toString fermentable.lovibond), onInput (SetFermentableLovibond fermentable) ] []
-      , input [ class "ibu-input", defaultValue (toString fermentable.amount), onInput (SetFermentableAmount fermentable) ] []
-      , div [ class "ibu-text"] [ text (Round.round 2 fermentable.morey) ]
-      , (viewCircle (getColor fermentable.morey))
-      , div [ class "ibu-text"] [ text (Round.round 2 fermentable.daniels) ]
-      , (viewCircle (getColor fermentable.daniels))
-      , div [ class "ibu-text"] [ text (Round.round 2 fermentable.mosher) ]
-      , (viewCircle (getColor fermentable.mosher))
-      , button [ class "remove-button", onClick (RemoveFermentable fermentable.index)] [ text "-"]
+viewTotalSrm : Srm -> Html Msg
+viewTotalSrm srm =
+  div [] 
+    [ div [] 
+        [ h4 [] [ text "Mosher" ]
+        , h4 [] [ text (Round.round 2 srm.mosher)]
+        ]
+    , div [] 
+          [ h4 [] [ text "Daniels" ]
+          , h4 [] [ text  (Round.round 2 srm.daniels)]
+          ]
+    , div [] 
+          [ h4 [] [ text "Morey" ]
+          , h4 [] [ text  (Round.round 2 srm.morey)]
+          ]
+    ]
+
+viewFermentableTable : List Fermentable -> Html Msg
+viewFermentableTable fermentables =
+  table [class "rwd-table"] 
+          (tr [] 
+              [ th [] [ text "Name"] 
+              , th [] [ text "Lovibond"] 
+              , th [] [ text "Amount"]
+              , th [] [ text "Morey" ]
+              , th [] [ text "Daniels" ]
+              , th [] [ text "Mosher" ]
+              ]
+          :: (List.map viewFermentableRow fermentables))
+
+
+
+viewFermentableRow : Fermentable -> Html Msg
+viewFermentableRow fermentable =
+  tr []
+      [ td [ attribute "data-th" "Name"] [ input [ defaultValue fermentable.name, onInput (SetFermentableName fermentable)] []]
+      , td [ attribute "data-th" "Lovibond"] [ input [ defaultValue (toString fermentable.lovibond), onInput (SetFermentableLovibond fermentable) ] []]
+      , td [ attribute "data-th" "Amount"] [ input [ defaultValue (toString fermentable.amount), onInput (SetFermentableAmount fermentable) ] []]
+      , td [ attribute "data-th" "Morey"]
+        [ span [] [text (Round.round 2 fermentable.morey)]
+        , (viewCircle (getColor fermentable.morey))
+        ]
+      , td [ attribute "data-th" "Daniels"]
+        [ span [] [text (Round.round 2 fermentable.daniels)]
+        , (viewCircle (getColor fermentable.daniels))
+        ]
+      , td [ attribute "data-th" "Mosher"]
+        [ span [] [text (Round.round 2 fermentable.mosher)]
+        , (viewCircle (getColor fermentable.mosher))
+        ]
+      , td [] [ button [onClick (RemoveFermentable fermentable.index)] [ text "remove"]]
       ]
 
 recalculate : Abv -> Abv

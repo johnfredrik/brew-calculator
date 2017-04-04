@@ -6,6 +6,7 @@ $breakpoint-alpha: 480px;
 // can add Boostrap overrides, additional Sass/CSS below...
 body {
     background-color: #f6f6f6;
+    text-rendering: optimizeLegibility;
 }
 
 button {
@@ -170,14 +171,6 @@ input::-webkit-inner-spin-button {
   }
 }
 
-// body {
-//   padding: 0 2em;
-//   font-family: Montserrat, sans-serif;
-//   -webkit-font-smoothing: antialiased;
-//   text-rendering: optimizeLegibility;
-//   color: #444;
-//   background: #eee;
-// }
 
 .rwd-table {
   //background: #34495E;
