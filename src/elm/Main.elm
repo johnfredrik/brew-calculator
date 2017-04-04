@@ -8,6 +8,8 @@ import Components.Hop as Hop exposing(..)
 import String
 import Json.Decode exposing (map)
 import Http
+import Svg
+import Svg.Attributes as SvgAtt
 
 
 -- APP
@@ -30,7 +32,7 @@ model =
     { abv = abv
     , ibu = ibu
     , srm = initSrm
-    , calculator = SrmCalculator
+    , calculator = IbuCalculator
     , error = Nothing
     }
 
@@ -429,11 +431,6 @@ viewHopList : List Hop -> Html Msg
 viewHopList hops =
   div [class "mb-hops"]
     [ input [ class "mb-search", placeholder "search hop", onInput SearchHops] []
-    , div [ class "mb-title mb-hop"]
-      [ div [class "mb-hop-name"] [text "Name"]
-      , div [class "mb-hop-alpha"] [text "Alpha Acid Low"]
-      , div [] [text "Alpha Acid High"]
-      ]
     , div [] (List.map viewHop2 hops)
     ]
 
@@ -441,8 +438,7 @@ viewHop2 : Hop -> Html Msg
 viewHop2 hop =
   div [ class "mb-hop"] 
     [ div [ class "mb-hop-name" ] [text hop.name]
-    , div [ class "mb-hop-alpha" ] [text ((toString hop.acid.alpha.low) ++ "%")]
-    , div [ class "mb-hop-alpha" ] [text ((toString hop.acid.alpha.high) ++ "%")]
+    , div [ class "mb-hop-alpha" ] [text ("(" ++ (toString hop.acid.alpha.low) ++ " - " ++(toString hop.acid.alpha.high) ++ ")")]
     , button [ class "mb-hop-button", onClick (AddMbHop hop)] [text "add new"]
     ]
 
@@ -487,9 +483,12 @@ viewFermentable fermentable =
       [ input [ class "ibu-input", defaultValue fermentable.name, onInput (SetFermentableName fermentable)] []
       , input [ class "ibu-input", defaultValue (toString fermentable.lovibond), onInput (SetFermentableLovibond fermentable) ] []
       , input [ class "ibu-input", defaultValue (toString fermentable.amount), onInput (SetFermentableAmount fermentable) ] []
-      , div [ class "ibu-text", style [("background-color", (getColor fermentable.morey))]] [ text (Round.round 2 fermentable.morey) ]
-      , div [ class "ibu-text", style [("background-color", (getColor fermentable.daniels))]] [ text (Round.round 2 fermentable.daniels) ]
-      , div [ class "ibu-text", style [("background-color", (getColor fermentable.mosher))]] [ text (Round.round 2 fermentable.mosher) ]
+      , div [ class "ibu-text"] [ text (Round.round 2 fermentable.morey) ]
+      , (viewCircle (getColor fermentable.morey))
+      , div [ class "ibu-text"] [ text (Round.round 2 fermentable.daniels) ]
+      , (viewCircle (getColor fermentable.daniels))
+      , div [ class "ibu-text"] [ text (Round.round 2 fermentable.mosher) ]
+      , (viewCircle (getColor fermentable.mosher))
       , button [ class "remove-button", onClick (RemoveFermentable fermentable.index)] [ text "-"]
       ]
 
@@ -611,3 +610,20 @@ nextIndex items =
         1
       Just number ->
         number + 1
+
+viewCircle : String -> Html Msg
+viewCircle color = 
+    Svg.svg 
+      [ SvgAtt.width "20"
+      , SvgAtt.height "20"
+      ]
+      [ Svg.circle 
+          [ SvgAtt.cx "10"
+          , SvgAtt.cy "10"
+          , SvgAtt.r "8"
+          , SvgAtt.stroke "black"
+          , SvgAtt.strokeWidth "1"
+          , SvgAtt.fill color
+          ]
+          []
+      ]
