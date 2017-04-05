@@ -111,6 +111,20 @@ input::-webkit-inner-spin-button {
     background-color: lightblue;
 }
 
+.volume-input {
+    margin: 0 1em;
+    width: 3em;
+    text-align: center;
+}
+.srm-total {
+    width: 300px;
+    display: flex;
+    font-weight: bold;
+    justify-content: space-between;
+    align-items: center;
+    align-content: center;
+}
+
 .rwd-table {
   margin: 1em 0;
   min-width: 300px; // adjust to your needs

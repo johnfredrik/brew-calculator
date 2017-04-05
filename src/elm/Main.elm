@@ -440,7 +440,7 @@ viewSrm : Srm -> Html Msg
 viewSrm srm =
   div [] 
     [ label [] [ text "Volume"]
-    , input [ type_ "text", defaultValue (toString srm.volume), onInput SetSrmVolume] []
+    , input [ class "volume-input", type_ "text", defaultValue (toString srm.volume), onInput SetSrmVolume] []
     , viewTotalSrm srm
     , viewFermentableTable srm.fermentables 
     , button [onClick AddFermentable ] [ text "add"]
@@ -448,19 +448,13 @@ viewSrm srm =
 
 viewTotalSrm : Srm -> Html Msg
 viewTotalSrm srm =
-  div [] 
+  div [ class "srm-total"] 
     [ div [] 
-        [ h4 [] [ text "Mosher" ]
-        , h4 [] [ text (Round.round 2 srm.mosher)]
-        ]
-    , div [] 
-          [ h4 [] [ text "Daniels" ]
-          , h4 [] [ text  (Round.round 2 srm.daniels)]
-          ]
-    , div [] 
-          [ h4 [] [ text "Morey" ]
-          , h4 [] [ text  (Round.round 2 srm.morey)]
-          ]
+      [ span [] [text ("Mosher: " ++ (Round.round 2 srm.mosher))]
+      , (viewCircle (getColor srm.mosher))
+      ]
+    , div [] [ text ("Daniels: " ++ (Round.round 2 srm.daniels))]
+    , div [] [ text ("Morey: " ++ (Round.round 2 srm.morey))]
     ]
 
 viewFermentableTable : List Fermentable -> Html Msg
