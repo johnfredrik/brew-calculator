@@ -1,4 +1,4 @@
-module Components.Formula exposing(..)
+module Formula exposing(..)
 import Dict
 import Round exposing (round)
 import Debug exposing (log)

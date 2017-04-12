@@ -1,4 +1,4 @@
-module Components.Hop exposing(..)
+module Ibu exposing(..)
 import Json.Decode exposing (int, string, float, nullable,list, map, Decoder)
 import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded)
 

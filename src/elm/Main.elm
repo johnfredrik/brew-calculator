@@ -3,8 +3,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing ( onInput, onClick,on )
 import Round exposing( round )
-import Components.Formula exposing(..)
-import Components.Hop as Hop exposing(..)
+import Formula exposing(..)
+import Ibu as Ibu exposing(..)
 import String
 import Json.Decode exposing (map)
 import Http
@@ -151,7 +151,7 @@ update msg model =
       let
         hopId = (nextIndex model.ibu.hops)
         oldIbu = model.ibu
-        newIbu = { oldIbu | hops = (oldIbu.hops ++ [(Hop.init hopId) ])}
+        newIbu = { oldIbu | hops = (oldIbu.hops ++ [(Ibu.init hopId) ])}
       in
         ({ model | ibu = newIbu}, Cmd.none)
     RemoveHop index ->
