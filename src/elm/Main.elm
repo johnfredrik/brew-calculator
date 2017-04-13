@@ -4,7 +4,9 @@ import Html.Attributes exposing (..)
 import Html.Events exposing ( onInput, onClick,on )
 import Round exposing( round )
 import Formula exposing(..)
-import Ibu as Ibu exposing(..)
+import Ibu exposing(..)
+import Srm exposing(..)
+import Abv exposing(..)
 import String
 import Json.Decode exposing (map)
 import Http
@@ -36,58 +38,8 @@ model =
     , error = Nothing
     }
 
-type alias Abv =
-  { og : Float
-  , fg : Float
-  , miller : Float
-  , simple : Float
-  , alternativeSimple : Float
-  , advanced : Float
-  , alternativeAdvanced : Float
-  , microbrewit : Float
-  }
-
-abv : Abv
-abv = 
-  let
-    og = 1.054
-    fg = 1.010
-  in
-    { og = og
-    , fg = fg
-    , miller = miller og fg
-    , simple = simple og fg
-    , alternativeSimple = alternativeSimple og fg 
-    , advanced = advanced og fg
-    , alternativeAdvanced = alternativeAdvanced og fg
-    , microbrewit = microbrewit og fg
-    }
-
-type alias Ibu =
-  { og : Float
-  , boilVolume : Float
-  , hops : List Hop
-  , totalRager : Float
-  , totalTinseth : Float
-  , hopList : List Hop
-  }
-
-ibu : Ibu
-ibu = 
-  { og = 1.054, boilVolume = 20, hops = [], totalRager = 0, totalTinseth = 0, hopList = []}
 
 
-type alias Srm =
-  { daniels: Float
-  , fermentables: List Fermentable
-  , morey : Float 
-  , mosher: Float
-  , volume: Float
-  }
-
-initSrm : Srm
-initSrm =
-  {daniels = 0.0, fermentables = [], morey = 0.0, mosher = 0.0, volume = 20.0}
 
 type Calculator
   = AbvCalculator
@@ -97,9 +49,9 @@ type Calculator
 --   UPDATE
 type Msg 
   = NoOp
+  | ChangeCalculator Calculator
   | SetOG String
   | SetFG String
-  | ChangeCalculator Calculator
   | AddHop
   | RemoveHop Int
   | SetHopName Hop String
@@ -151,7 +103,7 @@ update msg model =
       let
         hopId = (nextIndex model.ibu.hops)
         oldIbu = model.ibu
-        newIbu = { oldIbu | hops = (oldIbu.hops ++ [(Ibu.init hopId) ])}
+        newIbu = { oldIbu | hops = (oldIbu.hops ++ [(Ibu.newHop hopId) ])}
       in
         ({ model | ibu = newIbu}, Cmd.none)
     RemoveHop index ->
@@ -493,41 +445,6 @@ viewFermentableRow fermentable =
       , td [] [ button [onClick (RemoveFermentable fermentable.index)] [ text "remove"]]
       ]
 
-recalculate : Abv -> Abv
-recalculate abv =
-  { abv 
-    | miller = miller abv.og abv.fg
-    , simple = simple abv.og abv.fg
-    , alternativeSimple = alternativeSimple abv.og abv.fg 
-    , advanced = advanced abv.og abv.fg
-    , alternativeAdvanced = alternativeAdvanced abv.og abv.fg
-    , microbrewit = microbrewit abv.og abv.fg
-    }
-
-recalculateIbu : Float -> Float -> Hop -> Hop
-recalculateIbu boilVolume boilGravity hop =
-  let
-    factor = 
-      if hop.hopType == "Pellet" then 
-        1.1
-      else 
-        1.0
-  in
-    {hop 
-      | rager = (rager (toFloat hop.boilTime) hop.amount hop.aa boilVolume boilGravity ) * factor
-      , tinseth = (tinseth (toFloat hop.boilTime) hop.amount hop.aa boilVolume boilGravity ) * factor
-    }
-
-calculateRager : List Hop -> Float
-calculateRager hops =
-  List.map (\hop -> hop.rager) hops
-    |> List.sum
-
-calculateTinseth : List Hop -> Float
-calculateTinseth hops =
-  List.map (\hop -> hop.tinseth) hops
-    |> List.sum
-
 onChange : (String -> msg) -> Html.Attribute msg
 onChange tagger =
   on "change" (Json.Decode.map tagger Html.Events.targetValue)
@@ -549,56 +466,6 @@ searchHops query =
     decodeHopComplete
     |> Http.get ("https://api.microbrew.it/hops/search?query=" ++ query)
     |> Http.send LoadHops
-
-
--- Fermentable
-type alias Fermentable =
-    { index : Int
-    , id : Int
-    , name : String
-    , lovibond : Float
-    , amount: Float
-    , morey : Float
-    , daniels : Float
-    , mosher : Float
-    }
-
-initFermentable : Int -> Fermentable
-initFermentable index =
-  {index = index, id = -1, name = "", lovibond = 30, amount = 0.0, morey = 0.0, daniels = 0.0, mosher = 0.0}
-
-recalculateSrm : Float -> Fermentable -> Fermentable
-recalculateSrm volume fermentable =
-    {fermentable 
-      | mosher = (mosher fermentable.amount fermentable.lovibond volume)
-      , morey = (morey fermentable.amount fermentable.lovibond volume)
-      , daniels = (mosher fermentable.amount fermentable.lovibond volume)
-    }
-
-updateFermentable : Fermentable -> Fermentable -> Fermentable
-updateFermentable newFermentable oldFermentable =
-  if newFermentable.index == oldFermentable.index then
-    { oldFermentable 
-    | name = newFermentable.name
-    , lovibond = newFermentable.lovibond
-    , amount = newFermentable.amount
-    , morey = newFermentable.amount
-    , mosher = newFermentable.mosher
-    , daniels = newFermentable.daniels
-    }
-  else
-    oldFermentable 
-
-
-
-updateSrm : Srm -> List Fermentable -> Srm
-updateSrm srm fermentables =
-  { srm 
-  | fermentables = fermentables
-  , morey = (List.map (\f -> f.morey) fermentables |> List.sum)
-  , mosher = (List.map (\f -> f.mosher) fermentables |> List.sum)
-  , daniels = (List.map (\f -> f.daniels) fermentables |> List.sum)
-  }
 
 
 nextIndex : List {a | index : Int} -> Int

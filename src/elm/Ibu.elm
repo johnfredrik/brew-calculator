@@ -1,6 +1,21 @@
 module Ibu exposing(..)
+import Formula exposing(..)
 import Json.Decode exposing (int, string, float, nullable,list, map, Decoder)
 import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded)
+
+
+type alias Ibu =
+  { og : Float
+  , boilVolume : Float
+  , hops : List Hop
+  , totalRager : Float
+  , totalTinseth : Float
+  , hopList : List Hop
+  }
+
+ibu : Ibu
+ibu = 
+  { og = 1.054, boilVolume = 20, hops = [], totalRager = 0, totalTinseth = 0, hopList = []}
 
 type alias Hop =
   { index : Int
@@ -15,8 +30,8 @@ type alias Hop =
   , acid : Acid
   }
 
-init : Int -> Hop 
-init index =
+newHop : Int -> Hop 
+newHop index =
   { index = index
   , id = -1, name = ""
   , aa = 0.0, amount = 0
@@ -76,3 +91,27 @@ updateHop newHop oldHop =
     { oldHop | name = newHop.name, aa = newHop.aa, boilTime = newHop.boilTime, amount = newHop.amount, hopType = newHop.hopType }
   else
     oldHop
+
+recalculateIbu : Float -> Float -> Hop -> Hop
+recalculateIbu boilVolume boilGravity hop =
+  let
+    factor = 
+      if hop.hopType == "Pellet" then 
+        1.1
+      else 
+        1.0
+  in
+    {hop 
+      | rager = (rager (toFloat hop.boilTime) hop.amount hop.aa boilVolume boilGravity ) * factor
+      , tinseth = (tinseth (toFloat hop.boilTime) hop.amount hop.aa boilVolume boilGravity ) * factor
+    }
+
+calculateRager : List Hop -> Float
+calculateRager hops =
+  List.map (\hop -> hop.rager) hops
+    |> List.sum
+
+calculateTinseth : List Hop -> Float
+calculateTinseth hops =
+  List.map (\hop -> hop.tinseth) hops
+    |> List.sum
